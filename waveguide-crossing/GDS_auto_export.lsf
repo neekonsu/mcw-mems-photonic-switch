@@ -1,0 +1,25 @@
+###################################
+### MAIN FUNCTION
+###################################    
+
+function GDS_AUTOEXPORT_MAIN(input){
+    verbose = input.verbose;
+    layer_def = input.layer_def;
+    gds_filename = input.gds_filename;
+
+    ?"** STEP 1: GETTING OBJECT TREE HIERARCHY **";       
+    start_time = now;
+    level_list = get_level_list("::model::");
+    if (verbose){
+        ?print_cell(level_list);
+    }
+    ?"\nStep 1 Time [s]: " + num2str((now-start_time)/1e3) + "\n";
+
+    ?"** STEP 2: GETTING CONTOURS AND SAVING IN GDS **";       
+    start_time = now;
+    f_name = gdsopen(gds_filename); 
+    stck = extract_gds(level_list, layer_def, 0, f_name, verbose);
+    gdsclose(f_name);
+
+    ?"\nStep 2 Time[s]:" + num2str((now-start_time)/1e3) + "\n";
+}

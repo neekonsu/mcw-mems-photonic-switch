@@ -1,0 +1,31 @@
+S = getsweepresult("s-parameter sweep", "S parameters");
+
+S11 = pinch(abs(S.S11)^2);
+S21 = pinch(abs(S.S21)^2);
+S31 = pinch(abs(S.S31)^2);
+S41 = pinch(abs(S.S41)^2);
+lambda = S.lambda;
+
+Pin = ones(length(lambda), 1);
+IL2 = 10*log10(Pin/S21); 
+IL3 = 10*log10(Pin/S31); 
+IL4 = 10*log10(Pin/S41); 
+
+plot(lambda*1e6, IL2, "lambda (um)", "Insertion loss (dB)", "","linewidth = 5, pen = --");
+holdon;
+plot(lambda*1e6, IL3, "lambda (um)", "Insertion loss (dB)", "","linewidth = 5, pen = -.");
+plot(lambda*1e6, IL4, "lambda (um)", "Insertion loss (dB)", "","linewidth = 5, pen = --, color = pink");
+holdoff;
+legend("IL port2", "IL port3", "IL port4");
+setplot("y min", -1);
+setplot("y max", 70);
+
+plot(lambda*1e6, S11, "lambda (um)", "Normalized power transmission", "","linewidth = 5, pen = --");
+holdon;
+plot(lambda*1e6, S21, "lambda (um)", "Normalized power transmission", "","linewidth = 5, pen = -.");
+plot(lambda*1e6, S31, "lambda (um)", "Normalized power transmission", "","linewidth = 5, pen = --, color = pink");
+plot(lambda*1e6, S41, "lambda (um)", "Normalized power transmission", "","linewidth = 5, pen = -., color = black");
+holdoff;
+legend("S11 (abs^2)", "S21 (abs^2)", "S31 (abs^2)", "S41 (abs^2)");
+setplot("y min", -0.1);
+setplot("y max", 1.1);
