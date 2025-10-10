@@ -1,227 +1,223 @@
+# -*- coding: utf-8 -*-
 """
-Geometry definition for the gap-adjustable directional coupler switch-cell.
+Geometry definitions for MEMS photonic switches.
 
-This module defines the device geometry in a reusable format that can be accessed
-by both the Lumerical FDTD simulation and visualization scripts.
+This module defines 3D geometries as 2D polygons extruded in the Z direction,
+matching the lithographic fabrication process for silicon photonics.
 
-Based on Han et al., Journal of Optical Microsystems (2021).
+All dimensions are stored in microns (um) for consistency with simulation tools.
 """
 
 import numpy as np
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional
+from typing import List, Optional
 
 
 @dataclass
-class SOIPlatform:
-    """Standard SOI platform specifications."""
-    device_layer_thickness: float  # 220 nm Si device layer
-    box_thickness: float           # 3 μm buried oxide
-    substrate_thickness: float     # 500 μm Si substrate
-
-    # Materials
-    device_material: str
-    box_material: str
-    substrate_material: str
-    cladding_index: float         # Air (1.0) or SiO2 (1.444)
-
-
-@dataclass
-class WaveguideSpec:
-    """Waveguide specifications for the directional coupler."""
-    width: float                  # Waveguide width
-    height: float                 # Height (= device layer)
-    coupling_length: float        # Coupling region length
-    waveguide_pitch: float        # Pitch between parallel waveguides
-
-
-@dataclass
-class CombDriveSpec:
-    """MEMS comb-drive actuator specifications from paper."""
-    # Comb finger dimensions
-    finger_width: float
-    finger_spacing: float
-    num_finger_pairs: int
-    finger_height: float
-
-    # Spring dimensions
-    spring_width: float
-    spring_length: float
-    num_springs: int
-
-    # Actuator footprint
-    footprint_x: float
-    footprint_y: float
-
-    # Moving mass dimensions
-    shuttle_width: float
-    shuttle_length: float
-
-    # Anchor dimensions
-    anchor_width: float
-    anchor_length: float
-
-
-@dataclass
-class GapSpec:
-    """Gap specifications for MEMS-tunable coupler."""
-    gap_off: float      # OFF state - weak coupling
-    gap_on: float       # ON state - strong coupling
-    gap_contact: float  # Contact state
-
-    def get_gap(self, state: str) -> float:
-        """Get gap distance for a given state."""
-        # TODO: Implement gap state logic
-        pass
-
-
-@dataclass
-class GratingCouplerSpec:
-    """Grating coupler specifications (from paper)."""
-    pitch: float
-    duty_cycle: float
-    etch_depth: float
-    bandwidth: float
-
-
-@dataclass
-class OpticalSpec:
-    """Optical simulation parameters."""
-    wavelength_center: float
-    wavelength_span: float
-    polarization: str
-    mode_number: int
-
-
-class DirectionalCouplerGeometry:
+class ExtrudedPolygon:
     """
-    Complete geometry definition for the gap-adjustable directional coupler.
+    Represents a 3D structure as a 2D polygon extruded in the Z direction.
 
-    This class provides methods to query all geometric parameters and generate
-    structure definitions for both simulation and visualization.
+    This matches the lithographic fabrication process where features are defined
+    in the XY plane and etched to specific depths.
+
+    Attributes:
+        vertices: Nx2 numpy array of (x, y) coordinates in microns
+        z_min: Minimum Z coordinate in microns
+        z_max: Maximum Z coordinate in microns
+        name: Identifier for this geometry element
+        material: Material type (e.g., 'Si', 'SiO2', 'Air')
+        geometry_type: Type of structure (e.g., 'waveguide', 'comb', 'spring')
     """
+    vertices: np.ndarray  # Shape: (N, 2) - XY coordinates in microns
+    z_min: float  # microns
+    z_max: float  # microns
+    name: str = "unnamed"
+    material: str = "Si"
+    geometry_type: str = "generic"
 
-    def __init__(self, gap_state: str = 'off'):
-        """
-        Initialize the directional coupler geometry.
-
-        Args:
-            gap_state: 'off' (550nm), 'on' (50nm), or 'contact' (0nm)
-        """
-        # TODO: Initialize all specification objects
-        pass
+    def __post_init__(self):
+        """Validate and convert vertices to numpy array."""
+        self.vertices = np.asarray(self.vertices, dtype=np.float64)
+        if self.vertices.ndim != 2 or self.vertices.shape[1] != 2:
+            raise ValueError(f"vertices must be Nx2 array, got shape {self.vertices.shape}")
 
     @property
-    def current_gap(self) -> float:
-        """Get the current gap distance based on state."""
-        # TODO: Implement current gap calculation
-        pass
+    def thickness(self) -> float:
+        """Return the thickness (z_max - z_min) in microns."""
+        return self.z_max - self.z_min
 
     @property
-    def y_offset(self) -> float:
-        """Calculate the y-offset for waveguide positioning."""
-        # TODO: Implement y-offset calculation
-        pass
+    def z_center(self) -> float:
+        """Return the center Z coordinate in microns."""
+        return (self.z_min + self.z_max) / 2
 
-    def get_parameters_dict(self) -> Dict:
+    def get_xy_bounds(self):
         """
-        Export all parameters as a dictionary for Lumerical simulation.
+        Get the bounding box in the XY plane.
 
         Returns:
-            Dictionary of all geometry parameters
+            tuple: (x_min, x_max, y_min, y_max) in microns
         """
-        # TODO: Build and return parameters dictionary
-        pass
+        x_min, y_min = self.vertices.min(axis=0)
+        x_max, y_max = self.vertices.max(axis=0)
+        return x_min, x_max, y_min, y_max
 
-    def get_complete_switch_structures(self) -> List[Dict]:
+    def translate(self, dx: float, dy: float, dz: float = 0):
         """
-        Get the complete switch cell with two directional couplers and diagonal comb-drive.
-
-        Based on paper description:
-        - Each switch cell has TWO directional couplers
-        - Couplers are tethered to a common comb-drive actuator
-        - Actuator moves in diagonal direction
-        - This controls both couplers simultaneously
-
-        Returns:
-            List of structure dictionaries
-        """
-        # TODO: Create list of all device structures
-        pass
-
-    def _create_substrate_layers(self) -> List[Dict]:
-        """Create substrate, BOX, and cladding layers."""
-        # TODO: Implement substrate layer creation
-        pass
-
-    def _create_directional_coupler(self, center_x: float, center_y: float,
-                                   angle: float, coupler_id: int) -> List[Dict]:
-        """
-        Create a single directional coupler at given position and angle.
+        Translate the geometry by (dx, dy, dz) in microns.
 
         Args:
-            center_x, center_y: Position of coupler center
-            angle: Rotation angle in degrees
-            coupler_id: Identifier for this coupler (1 or 2)
+            dx: Translation in X direction (microns)
+            dy: Translation in Y direction (microns)
+            dz: Translation in Z direction (microns)
         """
-        # TODO: Implement directional coupler creation
-        pass
-
-    def _create_comb_drive_diagonal(self) -> List[Dict]:
-        """Create the diagonal comb-drive actuator connecting both couplers."""
-        # TODO: Implement comb-drive structure creation
-        pass
-
-    def get_waveguide_structures(self) -> List[Dict]:
-        """
-        Get list of all device structures including waveguides and MEMS actuator.
-
-        This is the main method called by visualization and simulation scripts.
-        It returns the complete switch cell design from the paper.
-
-        Returns:
-            List of dictionaries, each containing structure information:
-            - name: structure name
-            - x, y, z: center position
-            - x_span, y_span, z_span: dimensions
-            - material: material type ('Si', 'SiO2', 'Air')
-            - type: 'substrate', 'waveguide', 'comb', 'spring', 'anchor', 'shuttle'
-        """
-        # TODO: Call get_complete_switch_structures
-        pass
-
-    def get_device_bounds(self) -> Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]:
-        """
-        Get the bounding box of the entire device.
-
-        Returns:
-            ((x_min, x_max), (y_min, y_max), (z_min, z_max))
-        """
-        # TODO: Calculate and return device bounds
-        pass
-
-    def print_summary(self):
-        """Print a human-readable summary of the geometry."""
-        # TODO: Implement summary printing
-        pass
+        self.vertices = self.vertices + np.array([dx, dy])
+        self.z_min += dz
+        self.z_max += dz
 
 
-# Convenience function for quick access
-def get_geometry(gap_state: str = 'off') -> DirectionalCouplerGeometry:
+@dataclass
+class Waveguide(ExtrudedPolygon):
     """
-    Get a DirectionalCouplerGeometry instance.
+    Waveguide structure represented as an extruded polygon.
+
+    Inherits from ExtrudedPolygon with geometry_type set to 'waveguide'.
+    """
+    geometry_type: str = field(default='waveguide', init=False)
+
+
+@dataclass
+class Switch(ExtrudedPolygon):
+    """
+    Switch structure represented as an extruded polygon.
+
+    Inherits from ExtrudedPolygon with geometry_type set to 'switch'.
+    """
+    geometry_type: str = field(default='switch', init=False)
+
+
+def create_rectangle(x_center: float, y_center: float, width: float, height: float,
+                     z_min: float, z_max: float, **kwargs) -> ExtrudedPolygon:
+    """
+    Create a rectangular ExtrudedPolygon centered at (x_center, y_center).
 
     Args:
-        gap_state: 'off', 'on', or 'contact'
+        x_center: X coordinate of rectangle center (microns)
+        y_center: Y coordinate of rectangle center (microns)
+        width: Width in X direction (microns)
+        height: Height in Y direction (microns)
+        z_min: Minimum Z coordinate (microns)
+        z_max: Maximum Z coordinate (microns)
+        **kwargs: Additional arguments passed to ExtrudedPolygon
 
     Returns:
-        DirectionalCouplerGeometry instance
+        ExtrudedPolygon with rectangular cross-section
     """
-    # TODO: Create and return geometry instance
-    pass
+    half_w = width / 2
+    half_h = height / 2
+    vertices = np.array([
+        [x_center - half_w, y_center - half_h],  # Bottom-left
+        [x_center + half_w, y_center - half_h],  # Bottom-right
+        [x_center + half_w, y_center + half_h],  # Top-right
+        [x_center - half_w, y_center + half_h],  # Top-left
+    ])
+    return ExtrudedPolygon(vertices=vertices, z_min=z_min, z_max=z_max, **kwargs)
+
+
+def create_waveguide_rectangle(x_center: float, y_center: float, width: float, height: float,
+                                z_min: float, z_max: float, **kwargs) -> Waveguide:
+    """
+    Create a rectangular Waveguide centered at (x_center, y_center).
+
+    Args:
+        x_center: X coordinate of waveguide center (microns)
+        y_center: Y coordinate of waveguide center (microns)
+        width: Width in X direction (microns)
+        height: Height in Y direction (microns)
+        z_min: Minimum Z coordinate (microns)
+        z_max: Maximum Z coordinate (microns)
+        **kwargs: Additional arguments passed to Waveguide
+
+    Returns:
+        Waveguide with rectangular cross-section
+    """
+    half_w = width / 2
+    half_h = height / 2
+    vertices = np.array([
+        [x_center - half_w, y_center - half_h],
+        [x_center + half_w, y_center - half_h],
+        [x_center + half_w, y_center + half_h],
+        [x_center - half_w, y_center + half_h],
+    ])
+    return Waveguide(vertices=vertices, z_min=z_min, z_max=z_max, **kwargs)
+
+
+# Example geometries for testing
+def get_example_geometries() -> List[ExtrudedPolygon]:
+    """
+    Create example geometries for testing visualization.
+
+    Returns:
+        List of ExtrudedPolygon objects representing a simple photonic switch
+    """
+    geometries = []
+
+    # Silicon device layer (220nm thick, standard SOI)
+    si_z_min = 0.0
+    si_z_max = 0.22
+
+    # Create two parallel waveguides (450nm wide, 20um long)
+    wg_width = 0.45  # microns
+    wg_length = 20.0  # microns
+    gap = 0.55  # microns (OFF state)
+
+    # Waveguide 1 (top)
+    wg1_y = gap / 2 + wg_width / 2
+    wg1 = create_waveguide_rectangle(
+        x_center=0, y_center=wg1_y,
+        width=wg_length, height=wg_width,
+        z_min=si_z_min, z_max=si_z_max,
+        name="waveguide_1", material="Si"
+    )
+    geometries.append(wg1)
+
+    # Waveguide 2 (bottom)
+    wg2_y = -(gap / 2 + wg_width / 2)
+    wg2 = create_waveguide_rectangle(
+        x_center=0, y_center=wg2_y,
+        width=wg_length, height=wg_width,
+        z_min=si_z_min, z_max=si_z_max,
+        name="waveguide_2", material="Si"
+    )
+    geometries.append(wg2)
+
+    # Create a simple switch element (placeholder for MEMS actuator)
+    # This is a simplified representation - actual MEMS structure will be more complex
+    switch = Switch(
+        vertices=np.array([
+            [-5, -2], [5, -2], [5, 2], [-5, 2]
+        ]),
+        z_min=si_z_min, z_max=si_z_max,
+        name="switch_element", material="Si"
+    )
+    geometries.append(switch)
+
+    return geometries
 
 
 if __name__ == "__main__":
-    # Example usage
-    # TODO: Add example usage code
-    pass
+    # Test the geometry creation
+    print("Creating example geometries...")
+    geometries = get_example_geometries()
+
+    print(f"\nCreated {len(geometries)} geometry objects:")
+    for geom in geometries:
+        print(f"\n{geom.name}:")
+        print(f"  Type: {geom.geometry_type}")
+        print(f"  Material: {geom.material}")
+        print(f"  Vertices: {geom.vertices.shape[0]} points")
+        print(f"  Z range: {geom.z_min:.3f} to {geom.z_max:.3f} um")
+        print(f"  Thickness: {geom.thickness:.3f} um")
+        x_min, x_max, y_min, y_max = geom.get_xy_bounds()
+        print(f"  XY bounds: X=[{x_min:.3f}, {x_max:.3f}], Y=[{y_min:.3f}, {y_max:.3f}] um")
