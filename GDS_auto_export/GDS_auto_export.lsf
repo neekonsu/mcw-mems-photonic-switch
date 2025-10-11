@@ -1,0 +1,71 @@
+#####################################################
+
+# Script file: GDS_auto_export.lsf
+
+# Objective: Automatically export the physical structures into a GDSII file
+
+# Copyright 2019 Lumerical Solutions
+
+#####################################################
+
+#-------- WORK FLOW -------#
+# 1. Users define the output GDSII file name, and the top cell name.
+# 2. Users define the layer properties. A layer corresponds to a unique set of z min & z max
+# 3. Users define optional settings, e.g., the number of points for the discretization of circle, ring, custom, and waveguide objects.
+# 4. Lumerical scripts will automatically export the structures into a GDSII file.
+
+#-------- NOTES --------#
+# 1. This package works with FDTD Solutions, MODE Solutions, and DEVICE (2019a or later).
+#
+# 2. Only the physical structures will be exported. 
+#    Supported object types: Polygon, Rectangle, Circle, Ring, Custom, Waveguide, and Structure/Analysis/Layout/Geometry Groups that contain the above mentioned structures.
+#
+# 3. We strongly recommend using unique names for all physical objects, as GDSII requires unique cell names.
+#    If there are multiple objects having the same name, numbers will be added to the object names within the final GDS.
+#
+# 4. All objects must use relative coordinates, i.e., the "use relative coordinates" property should be true.
+#
+# 5. Rotations around z are supported.
+# 
+# 6. For questions and feedback, please contact lumerical support.  
+#
+#####################################################
+
+# User modification section starts here
+clear; #Start with a clean workspace
+
+# Do you want to load a specific file? If yes, provide the file name; otherwise, leave the line below commented and the current project will be used.
+#load("GDS_auto_export_test.fsp");
+
+# STEP 1: Users define the output GDSII file name, and the top cell name.
+gds_filename = 'sbend_devCaUv_70um.gds';
+top_cell = 'sbend_devCaUv_70um';
+
+# STEP 2. Users define the layer properties. Here, a layer corresponds to a unique set of z min & z max.
+
+# Option 1: [layer number, z min, z max; layer number, z min, z max; ...], where layer datatype will default to zero
+layer_def = [1, -0.06e-6, 0.06e-6];
+
+# Option 2: [layer number, layer datatype, z min, z max; layer number, layer datatype, z min, z max; ...]
+#layer_def = [1, 0, -0.5e-6, 0.5e-6; 
+             #2, 0, 0, 0.5e-6; 
+             #3, 0, -0.5e-6, 0; 
+             #4, 0, -0.25e-6, 0.25e-6]; # layer number, layer datatype, z min, z max
+
+# STEP 3. Users define optional settings, e.g., the number of points for the discretization of circle, ring, custom, and waveguide objects.
+n_circle = 256;	# number of sides to use for circle approximation (64 by default).
+n_ring = 256;	# number of slices to use for ring approximation (64 by default).
+n_custom = 256;	# number of slices to use for custom approximation (64 by default).
+n_wg = 256;	# number of slices to use for waveguide approximation (64 by default). 
+round_to_nm = 1;	# round the z and z span to the nearest integer of nm
+grid = 1e-9;	# Round XY coordinates to this grid in SI. Will also update the database units if grid < 
+max_objects = 20000;	# the maximum number of objects within the workspace (Increasing this will increase export time)
+
+# User modification section ends here 
+#####################################################
+
+# STEP 4. Lumerical scripts will automatically export the structures into a GDSII file.
+# Doesn't work for Klayout 0.27+
+
+Lumerical_GDS_autoexp_functions;
+Lumerical_GDS_autoexp;

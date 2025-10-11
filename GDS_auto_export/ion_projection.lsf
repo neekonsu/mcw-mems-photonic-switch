@@ -1,0 +1,27 @@
+mon_name = "farfield_projection";
+mon_name = "projection_Monitor";
+
+
+x = -25e-6:100e-8:25e-6;
+y = 0e-6:100e-8:200e-6;
+z = 73.22e-6;
+#z = 1.7e-6;
+
+out = farfieldexact3d(mon_name,x,y,z,{"field":"E and H", "f":1});
+
+E = out.E;
+H = out.H;
+
+S = cross(E,H);
+
+I = sqrt(S(:,:,1,1,1)^2 + S(:,:,1,1,2)^2 + S(:,:,1,1,3)^2);
+
+
+#E_tot = sqrt(E(:,:,1,1)^2 + E(:,:,1,2)^2 + E(:,:,1,3)^2);
+
+#I = 8.85418e-12*E_tot^2;
+
+image(x,y,I);
+
+#setplot("colorbar min",1e-9);
+#setplot("colorbar max",1e-6);

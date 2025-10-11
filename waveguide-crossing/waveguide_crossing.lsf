@@ -2,8 +2,8 @@ closeall; clear; clearfunctions;
 cd(filedirectory(currentscriptname));
 
 # Load functions from landing directory
-feval("./GDSexport_core.lsfx");
-feval("./GDS_auto_export.lsf");
+feval("GDSexport_core.lsfx");
+feval("GDS_auto_export.lsf");
 
 # Load project file
 load('waveguide_crossing.fsp');
@@ -33,4 +33,4 @@ layer_def = cell(3);
 gds_filename = filebasename(currentfilename) + ".gds";
 
 # MAIN FUNCTION CALL #
-GDS_AUTOEXPORT_MAIN({"layer_def": layer_def, "gds_filename": gds_filename, "verbose": false });
+GDS_AUTOEXPORT_MAIN({"layer_def": layer_def, "gds_filename": gds_filename, "verbose": true });
