@@ -268,3 +268,115 @@ After successful installation:
 2. Start implementing the directional coupler component
 3. Use KLayout to visualize generated layouts
 4. Reference Han et al. paper for design parameters
+
+---
+
+## Design Implementation Progress
+
+### Initial Switch Cell Implementation (October 2025)
+
+#### What Was Completed
+
+Created initial GDSFactory-based switch cell implementation in `components/switch_cell.py` with the following hierarchical structure:
+
+**Component Functions Implemented:**
+
+1. **`waveguide_crossing()`** - Basic + shaped crossing
+   - 4 ports (N, S, E, W)
+   - Simple perpendicular waveguide intersection
+   - Arm length: 5 μm
+
+2. **`directional_coupler_straight()`** - Parallel waveguides for DC coupling
+   - Parameters: length (20 μm), width (0.45 μm), gap (0.55 μm default)
+   - Two parallel straight waveguides
+   - 4 ports (wg1_in/out, wg2_in/out)
+
+3. **`bent_waveguide_45deg()`** - Shuttle waveguide routing
+   - 45° diagonal path connecting DC1 to DC2
+   - Simplified segmented path (straight → diagonal → straight)
+   - 2 ports (in, out)
+
+4. **`comb_drive()`** - Electrostatic actuator
+   - 44 interdigitated finger pairs
+   - Finger width: 0.3 μm, gap: 0.4 μm
+   - Finger length: 20 μm
+   - Bus bars for fixed/moving combs
+
+5. **`folded_spring()`** - Mechanical suspension
+   - Serpentine meandering path
+   - Width: 0.3 μm, total length: 30 μm
+   - 2 folds per spring
+   - Anchor and shuttle connection ports
+
+6. **`switch_cell()`** - Top-level assembly
+   - Waveguide crossing at origin
+   - Input/through/drop waveguides
+   - Comb drive and 4 springs positioned
+   - 3 ports (input, through, drop)
+
+#### Workflow Validation
+
+**Successfully Demonstrated:**
+- ✅ GDSFactory component creation
+- ✅ Hierarchical cell assembly
+- ✅ GDS file generation (`layouts/switch_cell_off.gds`)
+- ✅ KLayout visualization
+- ✅ Cell hierarchy visible in KLayout cell browser
+- ✅ Parameterized design (gap parameter)
+
+**Command Used:**
+```bash
+conda activate tower-tapeout
+python components/switch_cell.py
+```
+
+**Output:**
+- GDS file written to `layouts/switch_cell_off.gds`
+- Design parameters printed to console
+- KLayout opened for visualization
+
+#### Known Issues with Initial Design
+
+**Architecture/Geometry Problems:**
+- ⚠️ **Overall layout is incorrect** - Component positioning and routing does not match Han et al. architecture
+- ⚠️ **DC coupling regions not properly integrated** - The directional couplers are not positioned to create actual coupling
+- ⚠️ **Shuttle geometry unclear** - What actually moves with the actuator is not well-defined
+- ⚠️ **Missing mechanical linkage** - No clear connection between comb drive displacement and DC gap tuning
+- ⚠️ **Waveguide routing is oversimplified** - 45° bends using straight segments, not smooth curves
+- ⚠️ **Spring positioning arbitrary** - Springs placed at corners without proper mechanical analysis
+
+**Design Methodology Issues:**
+- Need to better understand the coupling mechanism (how shuttle movement tunes both DC1 and DC2)
+- Need clearer definition of fixed vs. movable structures
+- Need proper bend radius for waveguides (not straight segments)
+- Need to review Han et al. figures more carefully for correct architecture
+
+#### Lessons Learned
+
+1. **GDSFactory workflow is functional** - The tool chain (Python → GDS → KLayout) works correctly
+2. **Hierarchical design approach is valid** - Building complex cells from simpler components is the right strategy
+3. **Need better architectural understanding before coding** - Should sketch/analyze the switch operation before implementing geometry
+4. **KLayout visualization is essential** - Visual feedback quickly reveals design errors
+
+#### Next Steps for Design Revision
+
+**Immediate Actions:**
+1. Review Han et al. paper figures to understand correct switch architecture
+2. Sketch the switch operation mode (OFF state vs ON state geometry)
+3. Identify which components are fixed vs. movable on shuttle
+4. Understand how comb drive displacement couples to DC gap change
+5. Redesign switch_cell.py with correct component positioning
+
+**Technical Improvements Needed:**
+- Use proper GDSFactory path/routing tools for waveguide bends
+- Define shuttle boundary/structure explicitly
+- Add etch release regions for MEMS
+- Improve spring design with proper mechanical anchoring
+- Add layer mapping for different process steps
+
+**Architecture Questions to Resolve:**
+- What is the exact shuttle geometry that moves?
+- How does linear actuator displacement translate to gap change in two DCs?
+- What is the fixed reference frame?
+- How are the springs anchored?
+- Where do metal pads connect to apply voltage?
