@@ -284,31 +284,79 @@ def create_mems_switch_unit():
         (bottom_continue_start_x + wg_width/2, bottom_continue_start_y - wg_width/2)
     ], layer=LAYER_SI)
 
-    # Reverse S-bend (10μm right + 10μm down)
-    bottom_reverse_s_start_x = bottom_continue_end_x
-    bottom_reverse_s_start_y = bottom_continue_end_y
-    bottom_reverse_s_end_x = bottom_reverse_s_start_x + 10.0
-    bottom_reverse_s_end_y = bottom_reverse_s_start_y - 10.0
+    # S-bend connecting from (30, -55) to (40, -65) - same type as left waveguide
+    # 10μm right, 10μm down
+    bottom_final_s_start_x = bottom_continue_end_x  # (30, -55)
+    bottom_final_s_start_y = bottom_continue_end_y
+    bottom_final_s_end_x = bottom_final_s_start_x + 10.0  # 10μm right
+    bottom_final_s_end_y = bottom_final_s_start_y - 10.0  # 10μm down
 
-    # Use S-bend component going right and down (opposite of original left shift)
-    bottom_reverse_s_component = gf.components.bend_s(
-        size=(10.0, -10.0),  # (horizontal offset positive = right, vertical offset negative = down)
+    # Use same S-bend component as left waveguide
+    bottom_final_s_component = gf.components.bend_s(
+        size=(10.0, -10.0),  # 10μm right, 10μm down
         cross_section=gf.cross_section.cross_section(
             width=wg_width,
             layer=LAYER_SI,
-            radius_min=3.0
+            radius_min=3.0  # Same radius as left waveguide S-bends
         )
     )
 
-    bottom_reverse_s_ref = c << bottom_reverse_s_component
-    bottom_reverse_s_ref.rotate(-90, center=(0, 0))  # Rotate 90° CW to go down and right
-    bottom_reverse_s_ref.move((bottom_reverse_s_start_x, bottom_reverse_s_start_y))
+    # Add to cell and position
+    # First move to position, then rotate around that point
+    bottom_final_s_ref = c << bottom_final_s_component
+    bottom_final_s_ref.move((bottom_final_s_start_x, bottom_final_s_start_y))
+    bottom_final_s_ref.rotate(180, center=(bottom_final_s_start_x, bottom_final_s_start_y))
+    bottom_final_s_ref.rotate(-90, center=(bottom_final_s_start_x, bottom_final_s_start_y))
 
     # Flatten to avoid off-grid issues
     c.flatten()
 
-    # Define final endpoint
-    s_bend_bottom_final = (bottom_reverse_s_end_x, bottom_reverse_s_end_y)  # (40, -65)
+    # Define final endpoint after S-bend
+    s_bend_bottom_final = (bottom_final_s_end_x, bottom_final_s_end_y)  # (40, -65)
+
+    # =========================================================================
+    # FINAL EXTENSIONS AND PORT LABELS
+    # =========================================================================
+
+    # Extend left waveguide by 10μm and label as "in1" (input port)
+    in1_start_x = s_bend_left_final[0]
+    in1_start_y = s_bend_left_final[1]
+    in1_end_x = in1_start_x - 10.0
+    in1_end_y = in1_start_y
+
+    final_wg_left = c.add_polygon([
+        (in1_start_x - wg_width/2, in1_start_y - wg_width/2),
+        (in1_end_x, in1_start_y - wg_width/2),
+        (in1_end_x, in1_start_y + wg_width/2),
+        (in1_start_x + wg_width/2, in1_start_y + wg_width/2)
+    ], layer=LAYER_SI)
+
+    # Add "in1" label at the end of left waveguide
+    c.add_label(
+        text="in1",
+        position=(in1_end_x, in1_end_y),
+        layer=LAYER_SI
+    )
+
+    # Extend bottom waveguide by 10μm and label as "drop2" (output port)
+    drop2_start_x = s_bend_bottom_final[0]
+    drop2_start_y = s_bend_bottom_final[1]
+    drop2_end_x = drop2_start_x
+    drop2_end_y = drop2_start_y - 10.0
+
+    final_wg_bottom = c.add_polygon([
+        (drop2_start_x - wg_width/2, drop2_start_y + wg_width/2),
+        (drop2_end_x - wg_width/2, drop2_end_y),
+        (drop2_end_x + wg_width/2, drop2_end_y),
+        (drop2_start_x + wg_width/2, drop2_start_y - wg_width/2)
+    ], layer=LAYER_SI)
+
+    # Add "drop2" label at the end of bottom waveguide
+    c.add_label(
+        text="drop2",
+        position=(drop2_end_x, drop2_end_y),
+        layer=LAYER_SI
+    )
 
 
     return c
