@@ -380,3 +380,56 @@ python components/switch_cell.py
 - What is the fixed reference frame?
 - How are the springs anchored?
 - Where do metal pads connect to apply voltage?
+
+---
+
+## Current Measured Design (October 2025 - Revised)
+
+### Design Parameters
+
+**Cell Dimensions:**
+- Unit cell size: 180 μm × 180 μm (repeatable in matrix)
+- Cell coordinate system: Centered at origin (0, 0)
+
+**Port Structure (2×2 Switch):**
+- Inputs: `in1`, `drop1`
+- Outputs: `through1`, `drop2`
+
+**Layer Definitions:**
+- LAYER_SI (1, 0): Silicon device layer (220nm thick, full etch)
+- LAYER_SI_PARTIAL (2, 0): Shallow etch (70nm for gratings)
+- LAYER_BOX (10, 0): BOX layer (buried oxide / release etch)
+- LAYER_METAL (41, 0): Metal pads (Au/Cr)
+
+### Current Geometry Implementation
+
+**Waveguide Crossing:**
+- Location: `cross` = (40, 40) μm from origin
+  - Equivalently: 50 μm left and down from top-right corner
+- Four waveguide arms (all 0.45 μm wide, LAYER_SI):
+  - Up: Extends from cross to top edge (drop1 output)
+  - Right: Extends from cross to right edge (through1 output)
+  - Down: Extends 50 μm down from cross
+  - Left: Extends 50 μm left from cross
+
+**Release Structure (Diamond):**
+- Shape: Rotated square (diamond orientation)
+- Side length: 50√2 μm ≈ 70.7 μm
+- Defined vertex points:
+  - `diamond_top` = (40, 90) μm - at top waveguide end
+  - `diamond_right` = (90, 40) μm - at right waveguide end
+  - `diamond_bottom` = (40, -10) μm - at bottom waveguide end
+  - `diamond_left` = (-10, 40) μm - at left waveguide end
+- Layer: LAYER_BOX (release etch for MEMS actuation)
+
+### Implementation Status
+
+**Completed:**
+- Cell structure and coordinate system defined
+- Waveguide crossing (4 arms) complete
+- BOX layer release region (diamond) defined with vertex points
+
+**In Progress:**
+- Adding remaining waveguide routing
+- MEMS actuator geometry
+- Input port connections
