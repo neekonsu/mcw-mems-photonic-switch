@@ -1,475 +1,497 @@
-#!/usr/bin/env python3
-"""
-Complete switch cell implementation for Tower SiPho MEMS switch.
-
-Based on Han et al., "32 × 32 silicon photonic MEMS switch with gap-adjustable
-directional couplers fabricated in commercial CMOS foundry" (J. Opt. Microsystems, 2021)
-
-Architecture:
-- Input waveguide with directional coupler DC1
-- Movable shuttle with bent waveguide (45° diagonal)
-- Second directional coupler DC2 to drop waveguide
-- Waveguide crossing for through/drop routing
-- MEMS comb-drive actuator (88μm × 88μm, 44 finger pairs)
-- 4 folded springs for suspension
-"""
-
 import gdsfactory as gf
 import numpy as np
-from typing import Tuple
-
-# Layer definitions (to be mapped to Tower SiPho PDK)
-LAYER_WG = (1, 0)        # Waveguide core (220nm thick Si)
-LAYER_SLAB = (2, 0)      # Shallow etch (70nm for gratings)
-LAYER_FULL_ETCH = (3, 0) # Full etch (220nm for MEMS release)
-LAYER_METAL = (10, 0)    # Metal pads (Au/Cr)
-
-# Design parameters from Han et al. paper
-WG_WIDTH = 0.45          # Waveguide width (μm)
-DC_LENGTH = 20.0         # Directional coupler length (μm)
-DC_GAP_OFF = 0.55        # Gap in OFF state (μm)
-DC_GAP_ON = 0.135        # Gap in ON state (μm) - optimal coupling
-
-COMB_FINGER_WIDTH = 0.3  # Comb finger width (μm)
-COMB_FINGER_GAP = 0.4    # Gap between fingers (μm)
-COMB_PAIRS = 44          # Number of finger pairs
-SPRING_WIDTH = 0.3       # Spring width (μm)
-SPRING_LENGTH = 30.0     # Spring length (μm)
-ACTUATOR_FOOTPRINT = 88.0 # Actuator footprint (μm)
-
+from gdsfactory import Component
 
 @gf.cell
-def waveguide_crossing() -> gf.Component:
+def create_mems_switch_unit():
     """
-    Simple waveguide crossing for routing.
-
-    Creates a + shaped crossing where two waveguides intersect.
-    Based on standard silicon photonics crossing designs.
-
-    Returns:
-        Component with crossing geometry and 4 ports (N, S, E, W)
+    Creates a complete unit cell of the 32x32 silicon photonic MEMS switch
+    with gap-adjustable directional couplers based on the paper specifications.
+    
+    Key dimensions from the paper:
+    - Unit cell: 166 μm pitch
+    - Directional coupler: 20 μm length, 450 nm width, 220 nm thick
+    - Initial gap: 550 nm (OFF state), can close to 135 nm (ON state)
+    - Comb drive: 88 μm × 88 μm footprint
+    - Comb fingers: 300 nm width, 400 nm spacing, 44 pairs
+    - Springs: 300 nm width, 30 μm length (4 folded springs)
+    - Switching voltage: 9.45V
     """
-    c = gf.Component("crossing")
-
-    # Crossing arm length (extend beyond center)
-    arm_length = 5.0
-
-    # Horizontal waveguide (East-West)
-    c.add_polygon([
-        (-arm_length, -WG_WIDTH/2),
-        (arm_length, -WG_WIDTH/2),
-        (arm_length, WG_WIDTH/2),
-        (-arm_length, WG_WIDTH/2)
-    ], layer=LAYER_WG)
-
-    # Vertical waveguide (North-South)
-    c.add_polygon([
-        (-WG_WIDTH/2, -arm_length),
-        (WG_WIDTH/2, -arm_length),
-        (WG_WIDTH/2, arm_length),
-        (-WG_WIDTH/2, arm_length)
-    ], layer=LAYER_WG)
-
-    # Add ports
-    c.add_port("W", center=(-arm_length, 0), width=WG_WIDTH, orientation=180, layer=LAYER_WG)
-    c.add_port("E", center=(arm_length, 0), width=WG_WIDTH, orientation=0, layer=LAYER_WG)
-    c.add_port("S", center=(0, -arm_length), width=WG_WIDTH, orientation=270, layer=LAYER_WG)
-    c.add_port("N", center=(0, arm_length), width=WG_WIDTH, orientation=90, layer=LAYER_WG)
-
-    return c
-
-
-@gf.cell
-def directional_coupler_straight(
-    length: float = DC_LENGTH,
-    width: float = WG_WIDTH,
-    gap: float = DC_GAP_OFF
-) -> gf.Component:
-    """
-    Parallel straight waveguides for directional coupler.
-
-    Two parallel waveguides separated by a gap.
-    One waveguide is fixed, one will be on the movable shuttle.
-
-    Args:
-        length: Coupling length (μm)
-        width: Waveguide width (μm)
-        gap: Gap between waveguides (μm)
-
-    Returns:
-        Component with two parallel waveguides and ports
-    """
-    c = gf.Component()
-
-    # Waveguide 1 (fixed - top)
-    y1 = gap/2 + width/2
-    c.add_polygon([
-        (0, y1 - width/2),
-        (length, y1 - width/2),
-        (length, y1 + width/2),
-        (0, y1 + width/2)
-    ], layer=LAYER_WG)
-
-    # Waveguide 2 (movable - bottom)
-    y2 = -(gap/2 + width/2)
-    c.add_polygon([
-        (0, y2 - width/2),
-        (length, y2 - width/2),
-        (length, y2 + width/2),
-        (0, y2 + width/2)
-    ], layer=LAYER_WG)
-
-    # Ports for waveguide 1 (fixed)
-    c.add_port("wg1_in", center=(0, y1), width=width, orientation=180, layer=LAYER_WG)
-    c.add_port("wg1_out", center=(length, y1), width=width, orientation=0, layer=LAYER_WG)
-
-    # Ports for waveguide 2 (movable)
-    c.add_port("wg2_in", center=(0, y2), width=width, orientation=180, layer=LAYER_WG)
-    c.add_port("wg2_out", center=(length, y2), width=width, orientation=0, layer=LAYER_WG)
-
-    return c
-
-
-@gf.cell
-def bent_waveguide_45deg(
-    dc1_length: float = DC_LENGTH,
-    dc2_length: float = DC_LENGTH,
-    spacing: float = 30.0
-) -> gf.Component:
-    """
-    Bent waveguide on shuttle connecting DC1 to DC2 at 45° angle.
-
-    This waveguide routes light from the input coupling region to the
-    drop coupling region along the diagonal movement direction.
-
-    Args:
-        dc1_length: Length of first DC region (μm)
-        dc2_length: Length of second DC region (μm)
-        spacing: Spacing between DC regions (μm)
-
-    Returns:
-        Component with bent waveguide path
-    """
-    c = gf.Component()
-
-    # Create path along 45° diagonal
-    # Start at DC1 end, route diagonally down to DC2 start
-
-    # Straight section 1 (horizontal, after DC1)
-    straight1 = 5.0
-
-    # Diagonal section (45°)
-    diag_length = spacing * np.sqrt(2)
-
-    # Straight section 2 (horizontal, before DC2)
-    straight2 = 5.0
-
-    # Build path using polygons for simplicity
-    # Start point (0, 0)
-    path_points = []
-
-    # Straight section 1
-    x, y = 0, 0
-    path_points.append((x, y))
-    x += straight1
-    path_points.append((x, y))
-
-    # 45° bend down
-    x += diag_length / np.sqrt(2)
-    y -= diag_length / np.sqrt(2)
-    path_points.append((x, y))
-
-    # Straight section 2
-    x += straight2
-    path_points.append((x, y))
-
-    # Create waveguide from path (simplified - using straight segments)
-    for i in range(len(path_points) - 1):
-        x1, y1 = path_points[i]
-        x2, y2 = path_points[i + 1]
-
-        # Calculate perpendicular offset for width
-        dx, dy = x2 - x1, y2 - y1
-        length = np.sqrt(dx**2 + dy**2)
-        if length > 0:
-            nx, ny = -dy/length, dx/length  # Normal vector
-
-            # Create rectangle for segment
-            pts = [
-                (x1 + nx * WG_WIDTH/2, y1 + ny * WG_WIDTH/2),
-                (x2 + nx * WG_WIDTH/2, y2 + ny * WG_WIDTH/2),
-                (x2 - nx * WG_WIDTH/2, y2 - ny * WG_WIDTH/2),
-                (x1 - nx * WG_WIDTH/2, y1 - ny * WG_WIDTH/2)
-            ]
-            c.add_polygon(pts, layer=LAYER_WG)
-
-    # Add ports
-    c.add_port("in", center=(0, 0), width=WG_WIDTH, orientation=180, layer=LAYER_WG)
-    c.add_port("out", center=path_points[-1], width=WG_WIDTH, orientation=0, layer=LAYER_WG)
-
-    return c
-
-
-@gf.cell
-def comb_drive(
-    finger_width: float = COMB_FINGER_WIDTH,
-    finger_gap: float = COMB_FINGER_GAP,
-    num_pairs: int = COMB_PAIRS,
-    finger_length: float = 20.0
-) -> gf.Component:
-    """
-    Comb drive actuator for gap tuning.
-
-    Creates interdigitated comb fingers for electrostatic actuation.
-    One set is fixed, one set is on the movable shuttle.
-
-    Args:
-        finger_width: Width of each comb finger (μm)
-        finger_gap: Gap between fingers (μm)
-        num_pairs: Number of finger pairs
-        finger_length: Length of fingers (μm)
-
-    Returns:
-        Component with comb drive geometry
-    """
-    c = gf.Component()
-
-    pitch = finger_width + finger_gap
-
-    # Fixed combs (even indices)
-    for i in range(0, num_pairs * 2, 2):
-        x = i * pitch
-        c.add_polygon([
-            (x, 0),
-            (x + finger_width, 0),
-            (x + finger_width, finger_length),
-            (x, finger_length)
-        ], layer=LAYER_WG)
-
-    # Moving combs (odd indices)
-    for i in range(1, num_pairs * 2, 2):
-        x = i * pitch
-        c.add_polygon([
-            (x, 0),
-            (x + finger_width, 0),
-            (x + finger_width, finger_length),
-            (x, finger_length)
-        ], layer=LAYER_WG)
-
-    # Add bus bars to connect fingers
-    total_width = num_pairs * 2 * pitch
-
-    # Fixed bus bar
-    c.add_polygon([
-        (0, finger_length),
-        (total_width, finger_length),
-        (total_width, finger_length + 2),
-        (0, finger_length + 2)
-    ], layer=LAYER_WG)
-
-    # Moving bus bar
-    c.add_polygon([
-        (0, -2),
-        (total_width, -2),
-        (total_width, 0),
-        (0, 0)
-    ], layer=LAYER_WG)
-
-    return c
-
-
-@gf.cell
-def folded_spring(
-    width: float = SPRING_WIDTH,
-    length: float = SPRING_LENGTH,
-    num_folds: int = 2
-) -> gf.Component:
-    """
-    Folded spring for shuttle suspension.
-
-    Creates a serpentine spring for mechanical suspension.
-
-    Args:
-        width: Spring beam width (μm)
-        length: Total spring length (μm)
-        num_folds: Number of folds in spring
-
-    Returns:
-        Component with folded spring geometry
-    """
-    c = gf.Component()
-
-    fold_length = length / (num_folds + 1)
-    fold_width = 5.0
-
-    # Create meandering path
-    path_points = [(0, 0)]
-    x, y = 0, 0
-
-    for i in range(num_folds):
-        # Straight segment
-        y += fold_length
-        path_points.append((x, y))
-
-        # Fold to the side
-        x += fold_width * (1 if i % 2 == 0 else -1)
-        path_points.append((x, y))
-
-    # Final segment
-    y += fold_length
-    path_points.append((x, y))
-
-    # Create spring from path
-    for i in range(len(path_points) - 1):
-        x1, y1 = path_points[i]
-        x2, y2 = path_points[i + 1]
-
-        if x1 == x2:  # Vertical segment
-            c.add_polygon([
-                (x1 - width/2, y1),
-                (x1 + width/2, y1),
-                (x2 + width/2, y2),
-                (x2 - width/2, y2)
-            ], layer=LAYER_WG)
-        else:  # Horizontal segment
-            c.add_polygon([
-                (x1, y1 - width/2),
-                (x2, y1 - width/2),
-                (x2, y1 + width/2),
-                (x1, y1 + width/2)
-            ], layer=LAYER_WG)
-
-    # Add anchor points
-    c.add_port("anchor", center=(0, 0), width=width, orientation=270, layer=LAYER_WG)
-    c.add_port("shuttle", center=path_points[-1], width=width, orientation=90, layer=LAYER_WG)
-
-    return c
-
-
-@gf.cell
-def switch_cell(gap: float = DC_GAP_OFF) -> gf.Component:
-    """
-    Complete switch cell assembly.
-
-    Combines all components into a single switch cell:
-    - Input/through/drop waveguides
-    - Waveguide crossing
-    - Two directional couplers (DC1 and DC2)
-    - Bent waveguide on movable shuttle
-    - Comb drive actuator
-    - 4 folded springs
-
-    Args:
-        gap: Directional coupler gap (μm). Default is OFF state.
-
-    Returns:
-        Complete switch cell component
-    """
-    c = gf.Component()
-
-    # Reference position for crossing at origin
-    crossing_pos = (0, 0)
-
-    # Add waveguide crossing
-    cross = waveguide_crossing()
-    cross_ref = c.add_ref(cross)
-    cross_ref.move(crossing_pos)
-
-    # Input waveguide (extends left from crossing)
-    input_length = 40.0
-    c.add_polygon([
-        (-input_length, -WG_WIDTH/2),
-        (0, -WG_WIDTH/2),
-        (0, WG_WIDTH/2),
-        (-input_length, WG_WIDTH/2)
-    ], layer=LAYER_WG)
-
-    # Through waveguide (extends right from crossing)
-    through_length = 40.0
-    c.add_polygon([
-        (0, -WG_WIDTH/2),
-        (through_length, -WG_WIDTH/2),
-        (through_length, WG_WIDTH/2),
-        (0, WG_WIDTH/2)
-    ], layer=LAYER_WG)
-
-    # Drop waveguide (extends down from crossing)
-    drop_length = 60.0
-    c.add_polygon([
-        (-WG_WIDTH/2, -drop_length),
-        (WG_WIDTH/2, -drop_length),
-        (WG_WIDTH/2, 0),
-        (-WG_WIDTH/2, 0)
-    ], layer=LAYER_WG)
-
-    # DC1 region (input to bent waveguide) - positioned in 3rd quadrant
-    dc1_x = -30.0
-    dc1_y = -15.0
-
-    # DC2 region (bent waveguide to drop) - positioned below DC1
-    dc2_x = -30.0
-    dc2_y = -50.0
-
-    # Add bent waveguide on shuttle (connecting DC1 to DC2)
-    bent_wg = bent_waveguide_45deg()
-    bent_ref = c.add_ref(bent_wg)
-    bent_ref.move((dc1_x, dc1_y))
-
-    # Add comb drive actuator (bottom left)
-    comb = comb_drive()
-    comb_ref = c.add_ref(comb)
-    comb_ref.move((-80, -80))
-
-    # Add 4 folded springs around shuttle
-    spring = folded_spring()
-
-    # Spring positions (corners of shuttle)
+    
+    c = Component()
+    
+    # Layer definitions
+    LAYER_SI = (1, 0)  # Silicon device layer (220nm thick) - full etch
+    LAYER_SI_PARTIAL = (2, 0)  # Shallow etch (70nm for gratings)
+    LAYER_METAL = (41, 0)  # Metal pads (Au/Cr)
+    
+    # Critical dimensions from paper
+    unit_cell_pitch = 166.0  # μm
+    
+    # Waveguide parameters
+    wg_width = 0.45  # 450 nm
+    wg_bend_radius = 5.0  # Typical for silicon photonics
+    
+    # Directional coupler parameters
+    coupler_length = 20.0  # μm
+    initial_gap = 0.55  # 550 nm (OFF state)
+    
+    # Comb drive parameters
+    comb_footprint = 88.0  # μm square
+    comb_finger_width = 0.3  # 300 nm
+    comb_finger_gap = 0.4  # 400 nm
+    comb_finger_pitch = comb_finger_width + comb_finger_gap  # 700 nm
+    num_finger_pairs = 44
+    comb_finger_length = 20.0  # Estimated from footprint
+    
+    # Spring parameters
+    spring_width = 0.3  # 300 nm
+    spring_length = 30.0  # μm per segment
+    spring_turns = 4  # Number of turns in folded spring
+    
+    # Center of the unit cell
+    center_x, center_y = 0, 0
+    
+    # =========================================================================
+    # FIXED WAVEGUIDES (Non-moving input/output structures)
+    # =========================================================================
+    
+    # Calculate positions for two parallel waveguides
+    wg_separation = 80.0  # Separation between upper and lower paths
+    upper_wg_y = wg_separation / 2
+    lower_wg_y = -wg_separation / 2
+    
+    # Upper fixed waveguide sections
+    # Input section (left)
+    upper_input = c.add_polygon([
+        (-unit_cell_pitch/2, upper_wg_y - wg_width/2),
+        (-coupler_length/2 - 2, upper_wg_y - wg_width/2),
+        (-coupler_length/2 - 2, upper_wg_y + wg_width/2),
+        (-unit_cell_pitch/2, upper_wg_y + wg_width/2)
+    ], layer=LAYER_SI)
+    
+    # Output section (right)
+    upper_output = c.add_polygon([
+        (coupler_length/2 + 2, upper_wg_y - wg_width/2),
+        (unit_cell_pitch/2, upper_wg_y - wg_width/2),
+        (unit_cell_pitch/2, upper_wg_y + wg_width/2),
+        (coupler_length/2 + 2, upper_wg_y + wg_width/2)
+    ], layer=LAYER_SI)
+    
+    # Lower fixed waveguide sections
+    # Input section (left)
+    lower_input = c.add_polygon([
+        (-unit_cell_pitch/2, lower_wg_y - wg_width/2),
+        (-coupler_length/2 - 2, lower_wg_y - wg_width/2),
+        (-coupler_length/2 - 2, lower_wg_y + wg_width/2),
+        (-unit_cell_pitch/2, lower_wg_y + wg_width/2)
+    ], layer=LAYER_SI)
+    
+    # Output section (right)
+    lower_output = c.add_polygon([
+        (coupler_length/2 + 2, lower_wg_y - wg_width/2),
+        (unit_cell_pitch/2, lower_wg_y - wg_width/2),
+        (unit_cell_pitch/2, lower_wg_y + wg_width/2),
+        (coupler_length/2 + 2, lower_wg_y + wg_width/2)
+    ], layer=LAYER_SI)
+    
+    # =========================================================================
+    # WAVEGUIDE CROSSING
+    # =========================================================================
+    
+    # Create the cross-connect waveguides through the center
+    # Upper-left to lower-right
+    crossing_1 = gf.Path()
+    crossing_1.append(gf.path.straight(length=30))
+    crossing_1.append(gf.path.euler(radius=wg_bend_radius, angle=-45))
+    crossing_1.append(gf.path.straight(length=wg_separation * np.sqrt(2)))
+    crossing_1.append(gf.path.euler(radius=wg_bend_radius, angle=-45))
+    crossing_1.append(gf.path.straight(length=30))
+    
+    cross_1 = c.add_ref(gf.path.extrude(crossing_1, width=wg_width, layer=LAYER_SI))
+    cross_1.move((coupler_length/2 + 2, upper_wg_y))
+    
+    # Lower-left to upper-right
+    crossing_2 = gf.Path()
+    crossing_2.append(gf.path.straight(length=30))
+    crossing_2.append(gf.path.euler(radius=wg_bend_radius, angle=45))
+    crossing_2.append(gf.path.straight(length=wg_separation * np.sqrt(2)))
+    crossing_2.append(gf.path.euler(radius=wg_bend_radius, angle=45))
+    crossing_2.append(gf.path.straight(length=30))
+    
+    cross_2 = c.add_ref(gf.path.extrude(crossing_2, width=wg_width, layer=LAYER_SI))
+    cross_2.move((coupler_length/2 + 2, lower_wg_y))
+    
+    # =========================================================================
+    # MOVABLE STRUCTURE (Directional couplers + comb drive)
+    # =========================================================================
+    
+    # Create movable coupling sections
+    # Upper movable coupler waveguide
+    upper_movable_y = upper_wg_y - initial_gap - wg_width
+    upper_movable = c.add_polygon([
+        (-coupler_length/2, upper_movable_y - wg_width/2),
+        (coupler_length/2, upper_movable_y - wg_width/2),
+        (coupler_length/2, upper_movable_y + wg_width/2),
+        (-coupler_length/2, upper_movable_y + wg_width/2)
+    ], layer=LAYER_SI)
+    
+    # Lower movable coupler waveguide
+    lower_movable_y = lower_wg_y + initial_gap + wg_width
+    lower_movable = c.add_polygon([
+        (-coupler_length/2, lower_movable_y - wg_width/2),
+        (coupler_length/2, lower_movable_y - wg_width/2),
+        (coupler_length/2, lower_movable_y + wg_width/2),
+        (-coupler_length/2, lower_movable_y + wg_width/2)
+    ], layer=LAYER_SI)
+    
+    # Connect movable waveguides to central shuttle
+    # Upper tether
+    tether_width = 2.0  # Wider for mechanical strength
+    upper_tether = c.add_polygon([
+        (-tether_width/2, upper_movable_y + wg_width/2),
+        (tether_width/2, upper_movable_y + wg_width/2),
+        (tether_width/2, 10),
+        (-tether_width/2, 10)
+    ], layer=LAYER_SI)
+    
+    # Lower tether
+    lower_tether = c.add_polygon([
+        (-tether_width/2, lower_movable_y - wg_width/2),
+        (tether_width/2, lower_movable_y - wg_width/2),
+        (tether_width/2, -10),
+        (-tether_width/2, -10)
+    ], layer=LAYER_SI)
+    
+    # Central shuttle that connects both movable sections
+    shuttle = c.add_polygon([
+        (-15, -10),
+        (15, -10),
+        (15, 10),
+        (-15, 10)
+    ], layer=LAYER_SI)
+    
+    # =========================================================================
+    # COMB DRIVE ACTUATOR
+    # =========================================================================
+    
+    # Position comb drive to the side of the waveguides
+    comb_x_offset = -50  # Position to the left of center
+    comb_y_offset = 0
+    
+    # Fixed comb fingers (anchored to substrate)
+    # Create base/anchor for fixed combs
+    fixed_anchor = c.add_polygon([
+        (comb_x_offset - comb_footprint/2, comb_y_offset - 5),
+        (comb_x_offset - comb_footprint/2 + 5, comb_y_offset - 5),
+        (comb_x_offset - comb_footprint/2 + 5, comb_y_offset + 5),
+        (comb_x_offset - comb_footprint/2, comb_y_offset + 5)
+    ], layer=LAYER_SI)
+    
+    # Add fixed comb fingers
+    for i in range(num_finger_pairs):
+        finger_y = comb_y_offset - (num_finger_pairs * comb_finger_pitch) / 2 + i * comb_finger_pitch
+        
+        fixed_finger = c.add_polygon([
+            (comb_x_offset - comb_footprint/2 + 5, finger_y - comb_finger_width/2),
+            (comb_x_offset - comb_footprint/2 + 5 + comb_finger_length, finger_y - comb_finger_width/2),
+            (comb_x_offset - comb_footprint/2 + 5 + comb_finger_length, finger_y + comb_finger_width/2),
+            (comb_x_offset - comb_footprint/2 + 5, finger_y + comb_finger_width/2)
+        ], layer=LAYER_SI)
+    
+    # Moving comb fingers (connected to shuttle)
+    # Create backbone for moving combs
+    moving_backbone = c.add_polygon([
+        (comb_x_offset - comb_footprint/2 + 30, comb_y_offset - 20),
+        (comb_x_offset - comb_footprint/2 + 35, comb_y_offset - 20),
+        (comb_x_offset - comb_footprint/2 + 35, comb_y_offset + 20),
+        (comb_x_offset - comb_footprint/2 + 30, comb_y_offset + 20)
+    ], layer=LAYER_SI)
+    
+    # Add moving comb fingers (interdigitated with fixed fingers)
+    for i in range(num_finger_pairs):
+        finger_y = comb_y_offset - (num_finger_pairs * comb_finger_pitch) / 2 + i * comb_finger_pitch + comb_finger_pitch/2
+        
+        if finger_y < comb_y_offset + 20:  # Keep within backbone bounds
+            moving_finger = c.add_polygon([
+                (comb_x_offset - comb_footprint/2 + 10, finger_y - comb_finger_width/2),
+                (comb_x_offset - comb_footprint/2 + 10 + comb_finger_length, finger_y - comb_finger_width/2),
+                (comb_x_offset - comb_footprint/2 + 10 + comb_finger_length, finger_y + comb_finger_width/2),
+                (comb_x_offset - comb_footprint/2 + 10, finger_y + comb_finger_width/2)
+            ], layer=LAYER_SI)
+    
+    # Connect moving combs to shuttle
+    connection_bar = c.add_polygon([
+        (comb_x_offset - comb_footprint/2 + 30, -2),
+        (-15, -2),
+        (-15, 2),
+        (comb_x_offset - comb_footprint/2 + 30, 2)
+    ], layer=LAYER_SI)
+    
+    # =========================================================================
+    # FOLDED SPRINGS (4 springs as per paper)
+    # =========================================================================
+    
+    def create_folded_spring():
+        """Create a folded spring component"""
+        spring_spacing = 2.0
+        segment_length = 4.0
+
+        # Create serpentine spring pattern using polygons instead of Path
+        # This is more reliable for complex spring geometries
+        spring_comp = gf.Component()
+
+        x = 0
+        y = 0
+
+        for i in range(spring_turns):
+            # Horizontal segment
+            spring_comp.add_polygon([
+                (x, y - spring_width/2),
+                (x + segment_length, y - spring_width/2),
+                (x + segment_length, y + spring_width/2),
+                (x, y + spring_width/2)
+            ], layer=LAYER_SI)
+            x += segment_length
+
+            # Vertical segment (alternating up/down)
+            if i % 2 == 0:
+                # Move up
+                spring_comp.add_polygon([
+                    (x - spring_width/2, y),
+                    (x + spring_width/2, y),
+                    (x + spring_width/2, y + spring_spacing),
+                    (x - spring_width/2, y + spring_spacing)
+                ], layer=LAYER_SI)
+                y += spring_spacing
+            else:
+                # Move down
+                spring_comp.add_polygon([
+                    (x - spring_width/2, y - spring_spacing),
+                    (x + spring_width/2, y - spring_spacing),
+                    (x + spring_width/2, y),
+                    (x - spring_width/2, y)
+                ], layer=LAYER_SI)
+                y -= spring_spacing
+
+        # Final horizontal segment
+        spring_comp.add_polygon([
+            (x, y - spring_width/2),
+            (x + segment_length, y - spring_width/2),
+            (x + segment_length, y + spring_width/2),
+            (x, y + spring_width/2)
+        ], layer=LAYER_SI)
+
+        return spring_comp
+
+    # Add four folded springs at corners of shuttle
     spring_positions = [
-        (-70, -20),  # Top left
-        (-70, -70),  # Bottom left
-        (-30, -20),  # Top right
-        (-30, -70)   # Bottom right
+        (-25, 8),   # Top-left
+        (20, 8),    # Top-right
+        (-25, -8),  # Bottom-left
+        (20, -8)    # Bottom-right
     ]
 
-    for pos in spring_positions:
-        spring_ref = c.add_ref(spring)
-        spring_ref.move(pos)
-
-    # Add ports for the switch cell
-    c.add_port("input", center=(-input_length, 0), width=WG_WIDTH, orientation=180, layer=LAYER_WG)
-    c.add_port("through", center=(through_length, 0), width=WG_WIDTH, orientation=0, layer=LAYER_WG)
-    c.add_port("drop", center=(0, -drop_length), width=WG_WIDTH, orientation=270, layer=LAYER_WG)
-
+    for x, y in spring_positions:
+        spring_ref = c.add_ref(create_folded_spring())
+        spring_ref.move((x, y))
+    
+    # =========================================================================
+    # ANCHOR POINTS for springs (connected to substrate)
+    # =========================================================================
+    
+    anchor_size = 5.0
+    anchor_positions = [
+        (-25 - spring_turns*3, 8),    # Left-top anchor
+        (20 + spring_turns*3, 8),     # Right-top anchor
+        (-25 - spring_turns*3, -8),   # Left-bottom anchor
+        (20 + spring_turns*3, -8)     # Right-bottom anchor
+    ]
+    
+    for x, y in anchor_positions:
+        anchor = c.add_polygon([
+            (x - anchor_size/2, y - anchor_size/2),
+            (x + anchor_size/2, y - anchor_size/2),
+            (x + anchor_size/2, y + anchor_size/2),
+            (x - anchor_size/2, y + anchor_size/2)
+        ], layer=LAYER_SI)
+    
+    # =========================================================================
+    # METAL PADS for electrical connection
+    # =========================================================================
+    
+    pad_size = 30.0
+    pad_positions = [
+        (comb_x_offset - comb_footprint/2 - 20, 0),  # Fixed comb pad
+        (60, 0)  # Movable structure pad
+    ]
+    
+    for x, y in pad_positions:
+        metal_pad = c.add_polygon([
+            (x - pad_size/2, y - pad_size/2),
+            (x + pad_size/2, y - pad_size/2),
+            (x + pad_size/2, y + pad_size/2),
+            (x - pad_size/2, y + pad_size/2)
+        ], layer=LAYER_METAL)
+    
+    # Add metal traces connecting pads to actuators
+    # Trace to fixed combs
+    trace1 = c.add_polygon([
+        (comb_x_offset - comb_footprint/2 - 20 + pad_size/2, -1),
+        (comb_x_offset - comb_footprint/2, -1),
+        (comb_x_offset - comb_footprint/2, 1),
+        (comb_x_offset - comb_footprint/2 - 20 + pad_size/2, 1)
+    ], layer=LAYER_METAL)
+    
+    # Trace to moving structure
+    trace2 = c.add_polygon([
+        (60 - pad_size/2, -1),
+        (15, -1),
+        (15, 1),
+        (60 - pad_size/2, 1)
+    ], layer=LAYER_METAL)
+    
+    # =========================================================================
+    # LABELS AND ALIGNMENT MARKS
+    # =========================================================================
+    
+    # Add cell labels
+    c.add_label("MEMS_SWITCH_UNIT", position=(0, -unit_cell_pitch/2 + 10), layer=LAYER_SI)
+    c.add_label(f"Gap: {initial_gap*1000:.0f}nm", position=(0, upper_movable_y), layer=LAYER_SI)
+    
+    # Add alignment crosses at corners
+    cross_positions = [
+        (-unit_cell_pitch/2 + 10, unit_cell_pitch/2 - 10),
+        (unit_cell_pitch/2 - 10, unit_cell_pitch/2 - 10),
+        (-unit_cell_pitch/2 + 10, -unit_cell_pitch/2 + 10),
+        (unit_cell_pitch/2 - 10, -unit_cell_pitch/2 + 10)
+    ]
+    
+    for x, y in cross_positions:
+        cross = gf.components.cross(length=5, width=0.5, layer=LAYER_SI)
+        c.add_ref(cross).move((x, y))
+    
     return c
 
 
+@gf.cell
+def create_grating_coupler():
+    """
+    Create a grating coupler based on paper specifications.
+    - 640 nm pitch
+    - 50% duty cycle
+    - 70 nm etch depth (partial etch)
+    - 30 nm bandwidth
+    - TE polarization optimized
+    """
+    c = Component()
+    
+    LAYER_SI = (1, 0)
+    LAYER_SI_PARTIAL = (2, 0)
+    
+    # Grating parameters from paper
+    pitch = 0.64  # 640 nm
+    duty_cycle = 0.5  # 50%
+    num_periods = 25  # Typical for fiber coupling
+    grating_length = num_periods * pitch
+    taper_length = 10.0  # Taper from waveguide to grating
+    
+    # Waveguide width
+    wg_width = 0.45  # 450 nm
+    grating_width = 12.0  # Width of grating region
+    
+    # Create input taper
+    taper = c.add_polygon([
+        (0, -wg_width/2),
+        (taper_length, -grating_width/2),
+        (taper_length, grating_width/2),
+        (0, wg_width/2)
+    ], layer=LAYER_SI)
+    
+    # Create grating teeth (shallow etched regions)
+    for i in range(num_periods):
+        x_start = taper_length + i * pitch
+        tooth = c.add_polygon([
+            (x_start, -grating_width/2),
+            (x_start + pitch * duty_cycle, -grating_width/2),
+            (x_start + pitch * duty_cycle, grating_width/2),
+            (x_start, grating_width/2)
+        ], layer=LAYER_SI_PARTIAL)
+    
+    # Add full silicon region under grating
+    grating_base = c.add_polygon([
+        (taper_length, -grating_width/2),
+        (taper_length + grating_length, -grating_width/2),
+        (taper_length + grating_length, grating_width/2),
+        (taper_length, grating_width/2)
+    ], layer=LAYER_SI)
+    
+    return c
+
+
+@gf.cell
+def create_full_switch_matrix(size=32):
+    """
+    Create the full 32x32 switch matrix.
+    Total area: 5.9mm x 5.9mm for switch matrix
+    Additional 0.7mm x 8.4mm for grating couplers and routing
+    """
+    c = Component()
+    
+    unit_pitch = 166.0  # μm
+    
+    # Create the switch matrix
+    for i in range(size):
+        for j in range(size):
+            unit = create_mems_switch_unit()
+            unit_ref = c.add_ref(unit)
+            unit_ref.move((i * unit_pitch, j * unit_pitch))
+    
+    # Add grating couplers for inputs and outputs
+    gc = create_grating_coupler()
+    
+    # Input grating couplers (left side)
+    for i in range(size):
+        gc_ref = c.add_ref(gc)
+        gc_ref.rotate(180)  # Point towards chip
+        gc_ref.move((-200, i * unit_pitch))
+    
+    # Output grating couplers (right side)
+    for i in range(size):
+        gc_ref = c.add_ref(gc)
+        gc_ref.move((size * unit_pitch + 200, i * unit_pitch))
+    
+    # Add chip label
+    c.add_label(f"{size}x{size} MEMS SWITCH", 
+                position=(size * unit_pitch / 2, -100), 
+                layer=(1, 0))
+    
+    return c
+
+
+# Create and display the switch unit cell
 if __name__ == "__main__":
-    """Generate and display the switch cell."""
-
-    print("Generating switch cell layout...")
-
-    # Create switch cell in OFF state (default)
-    cell_off = switch_cell(gap=DC_GAP_OFF)
-
-    # Write GDS file
-    gds_path = "layouts/switch_cell_off.gds"
-    cell_off.write_gds(gds_path)
-    print(f"✓ GDS file written: {gds_path}")
-
-    # Display in KLayout
-    print("Opening in KLayout...")
-    cell_off.show()
-
-    print("\n" + "="*50)
-    print("Switch Cell Design Parameters:")
-    print("="*50)
-    print(f"Waveguide width: {WG_WIDTH} μm")
-    print(f"DC length: {DC_LENGTH} μm")
-    print(f"DC gap (OFF): {DC_GAP_OFF} μm")
-    print(f"DC gap (ON): {DC_GAP_ON} μm")
-    print(f"Comb finger width: {COMB_FINGER_WIDTH} μm")
-    print(f"Comb finger gap: {COMB_FINGER_GAP} μm")
-    print(f"Comb finger pairs: {COMB_PAIRS}")
-    print(f"Spring width: {SPRING_WIDTH} μm")
-    print(f"Spring length: {SPRING_LENGTH} μm")
-    print("="*50)
+    # Create single unit cell
+    switch_unit = create_mems_switch_unit()
+    
+    # Create grating coupler
+    grating = create_grating_coupler()
+    
+    # Create small 3x3 matrix for visualization (full 32x32 would be very large)
+    small_matrix = create_full_switch_matrix(size=3)
+    
+    # Show the unit cell
+    switch_unit.show()
+    
+    # Save to GDS files
+    switch_unit.write_gds("mems_switch_unit.gds")
+    grating.write_gds("grating_coupler.gds")
+    small_matrix.write_gds("switch_matrix_3x3.gds")
+    
+    # Print device statistics
+    print(f"Unit cell size: {166} μm x {166} μm")
+    print(f"Full 32x32 matrix size: {32*166/1000:.1f} mm x {32*166/1000:.1f} mm")
+    print(f"Switching voltage: 9.45V")
+    print(f"Number of comb finger pairs: 44")
+    print(f"Gap range: 550nm (OFF) to 135nm (ON)")
+    print(f"Extinction ratio: 50.8 dB")
