@@ -113,7 +113,7 @@ The following parameters need to be inferred from context, images, or convention
 
 ---
 
-## Next Steps
+## Workflow Summary
 
 1. Begin GDSFactory layout code for basic components
 2. Infer missing parameters from paper figures and conventional design practices
