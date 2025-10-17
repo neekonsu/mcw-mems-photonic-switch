@@ -17,7 +17,11 @@ spring_width = 0.3  # μm
 spring_length = 30.0  # μm
 cell_pitch = 166.0  # μm
 actuator_footprint = 88.0  # μm
-bend_radius = 9.0  # μm, inferred to fit the connection
+bend_radius = 10.0  # μm, inferred to fit the connection
+
+# Define custom cross_sections for consistency
+xs_wg = gf.cross_section.cross_section(width=waveguide_width, layer=WG_LAYER)
+xs_spring = gf.cross_section.cross_section(width=spring_width, layer=WG_LAYER)
 
 @gf.cell
 def crossing():
@@ -35,9 +39,11 @@ def crossing():
     t2h.move((wide_width/2, -waveguide_width/2))
     
     # Vertical tapers
-    t1v = c << taper1.rotate(90)
+    t1v = c << taper1
+    t1v.rotate(90)
     t1v.move((-waveguide_width/2, -taper_length - wide_width/2))
-    t2v = c << taper2.rotate(90)
+    t2v = c << taper2
+    t2v.rotate(90)
     t2v.move((-waveguide_width/2, wide_width/2))
     
     # Center cross region (multimode)
@@ -49,7 +55,7 @@ def crossing():
 def folded_spring():
     # Simple folded spring representation
     c = gf.Component()
-    beam = gf.components.straight(length=spring_length / 2, width=spring_width)
+    beam = gf.components.straight(length=spring_length / 2, cross_section=xs_spring)
     for i in range(4):  # 4 folds approximation
         b = c << beam
         b.move((i % 2 * 5, i // 2 * spring_width * 2))  # Rough layout
@@ -87,42 +93,49 @@ def unit_cell_switch():
     
     # Fixed horizontal waveguide
     horiz_fixed_length = cell_pitch
-    horiz_fixed = gf.components.straight(length=horiz_fixed_length, width=waveguide_width)
-    h_fixed = c << horiz_fixed
+    horiz_fixed_comp = gf.components.straight(length=horiz_fixed_length, cross_section=xs_wg)
+    h_fixed = c << horiz_fixed_comp
     h_fixed.move((-horiz_fixed_length/2, 0))
     
     # Fixed vertical waveguide
-    vert_fixed = gf.components.straight(length=horiz_fixed_length, width=waveguide_width).rotate(90)
-    v_fixed = c << vert_fixed
+    vert_fixed_comp = gf.components.straight(length=horiz_fixed_length, cross_section=xs_wg)
+    v_fixed = c << vert_fixed_comp
+    v_fixed.rotate(90)
     v_fixed.move((0, -horiz_fixed_length/2))
     
     # Crossing at center
     cross = c << crossing()
     
     # Moving L-shaped waveguide
-    # Horizontal part
-    horiz_moving = gf.components.straight(length=coupler_length, width=waveguide_width)
-    h_moving = c << horiz_moving
-    h_moving.move((-30 - coupler_length/2, -center_to_center))
+    # Horizontal part (positioned relative to actuator for better fit)
+    horiz_moving_comp = gf.components.straight(length=coupler_length, cross_section=xs_wg)
+    h_moving = c << horiz_moving_comp
+    h_moving.move((-actuator_footprint / 2 - coupler_length / 2, -center_to_center))
     
-    # Vertical part
-    vert_moving = gf.components.straight(length=coupler_length, width=waveguide_width).rotate(90)
-    v_moving = c << vert_moving
-    v_moving.move((-center_to_center, -30 - coupler_length/2))
+    # Bend connecting to horizontal
+    bend_comp = gf.components.bend_euler(angle=90, cross_section=xs_wg, radius=bend_radius)
+    b = c << bend_comp
+    b.connect("o1", h_moving.ports["o2"])
     
-    # Bend connecting them
-    bend = gf.components.bend_euler(angle=90, radius=bend_radius, width=waveguide_width)
-    b = c << bend
-    b.move(h_moving.ports["o2"].center)  # Connect to right end of horizontal moving
-    # Adjust if needed
+    # Vertical part connected to bend
+    vert_moving_comp = gf.components.straight(length=coupler_length, cross_section=xs_wg)
+    v_moving = c << vert_moving_comp
+    v_moving.connect("o1", b.ports["o2"])  # Automatically rotates and positions
     
     # Actuator
-    actuator = c << comb_drive().rotate(45)  # Diagonal orientation
-    actuator.move((-60, -60))  # Position in bottom left
+    actuator_comp = comb_drive()
+    actuator = c << actuator_comp
+    actuator.rotate(45)
+    actuator.move((-actuator_footprint / 2, -actuator_footprint / 2))  # Better bottom-left positioning
     
     # Springs, place 4 folded springs
-    for pos in [(-50, -50), (-50, -70), (-70, -50), (-70, -70)]:
-        spring = c << folded_spring().rotate(45)
+    for pos in [(-actuator_footprint / 2 + 10, -actuator_footprint / 2 + 10), 
+                (-actuator_footprint / 2 + 10, -actuator_footprint / 2 - 10), 
+                (-actuator_footprint / 2 - 10, -actuator_footprint / 2 + 10), 
+                (-actuator_footprint / 2 - 10, -actuator_footprint / 2 - 10)]:
+        spring_comp = folded_spring()
+        spring = c << spring_comp
+        spring.rotate(45)
         spring.move(pos)
     
     # Metal pads
@@ -130,9 +143,9 @@ def unit_cell_switch():
     ground_pad = gf.components.rectangle(size=pad_size, layer=METAL_LAYER)
     signal_pad = gf.components.rectangle(size=pad_size, layer=METAL_LAYER)
     g_pad = c << ground_pad
-    g_pad.move((-70, -80))
+    g_pad.move((-actuator_footprint / 2 - 10, -actuator_footprint / 2 - 30))
     s_pad = c << signal_pad
-    s_pad.move((-40, -80))
+    s_pad.move((-actuator_footprint / 2 + 20, -actuator_footprint / 2 - 30))
     
     return c
 
@@ -140,5 +153,5 @@ def unit_cell_switch():
 switch = unit_cell_switch()
 
 # Show or write to GDS
-# switch.show()  # If in interactive mode
-switch.write_gds("unit_cell_switch_grok.gds")
+switch.show()  # If in interactive mode
+# switch.write_gds("unit_cell_switch.gds")

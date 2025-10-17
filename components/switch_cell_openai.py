@@ -46,6 +46,7 @@ SHUTTLE_LEN = ACT_FOOT[0] - 10.0   # um, shuttle length inside the actuator (ass
 COUPLER_TO_CROSSING_GAP = 6.0      # um, clearance from crossing to each coupler (assumed)
 ROUTE_CLEAR = 2.0         # um, clearance for S-bends (assumed)
 PAD_SIZE = (35.0, 35.0)   # um, metal pad (assumed)
+CROSSING_SIZE = 8.0       # um, crossing box length (assumed)
 
 # --------------------------
 # Cross-sections
@@ -54,17 +55,17 @@ xs = gf.cross_section.strip(width=WG_W, layer=LAYER["WG"])
 
 @gf.cell
 def plus_crossing(
-    wg_width: float = 0.45,
+    wg_width: float = WG_W,
     length: float = 8.0,
-    layer: Layer = L_WG,
+    layer: LayerSpec = LAYER["WG"],
 ) -> gf.Component:
     """Version-agnostic waveguide crossing made from two straights.
     Ports: o1=West, o2=South, o3=East, o4=North (to match the original script)."""
     c = gf.Component("plus_crossing")
-    xs = xs_wg(wg_width)
+    xs_local = gf.cross_section.strip(width=wg_width, layer=layer)
 
-    h = c << gf.components.straight(length=length, cross_section=xs)   # W↔E
-    v = c << gf.components.straight(length=length, cross_section=xs)   # S↔N
+    h = c << gf.components.straight(length=length, cross_section=xs_local)   # W↔E
+    v = c << gf.components.straight(length=length, cross_section=xs_local)   # S↔N
     v.rotate(90)
 
     h.center = (0, 0)
@@ -77,15 +78,21 @@ def plus_crossing(
     c.add_port("o4", port=v.ports["o2"])  # North
     return c
 
-def coupler_gap_adjustable(length=COUPLER_LEN, gap=GAP_INIT, cross_section=xs) -> gf.Component:
+@gf.cell
+def coupler_gap_adjustable(
+    length: float = COUPLER_LEN,
+    gap: float = GAP_INIT,
+    wg_width: float = WG_W,
+    layer: LayerSpec = LAYER["WG"],
+) -> gf.Component:
     """Two parallel straights separated by 'gap' to form a gap-tunable directional coupler."""
-    c = gf.Component("gap_dc")
-    w = cross_section.width
+    c = gf.Component()
+    xs_local = gf.cross_section.strip(width=wg_width, layer=layer)
 
     # centers of the two rails
-    dy = 0.5 * (gap + w)
-    top = c << gf.components.straight(length=length, cross_section=cross_section)
-    bot = c << gf.components.straight(length=length, cross_section=cross_section)
+    dy = 0.5 * (gap + wg_width)
+    top = c << gf.components.straight(length=length, cross_section=xs_local)
+    bot = c << gf.components.straight(length=length, cross_section=xs_local)
     top.movey(+dy)
     bot.movey(-dy)
 
@@ -96,6 +103,7 @@ def coupler_gap_adjustable(length=COUPLER_LEN, gap=GAP_INIT, cross_section=xs) -
     c.add_port(name="b2", port=bot.ports["o2"])  # bottom right
     return c
 
+@gf.cell
 def comb_drive_diagonal(
     n_pairs=N_PAIRS,
     finger_w=FINGER_W,
@@ -112,7 +120,7 @@ def comb_drive_diagonal(
     Draws interdigitated fingers (n_pairs) and a central shuttle connected by four folded springs.
     Geometry is schematic (for mask iteration you can refine anchors/overlaps in this cell only).
     """
-    c = gf.Component("comb_drive_diag")
+    c = gf.Component()
 
     W, H = footprint
     # Draw an outer reference frame (for visual alignment)
@@ -138,17 +146,29 @@ def comb_drive_diagonal(
     for i in range(n_fingers_each_side):
         y = start_y + i * pitch
         # left, fixed fingers (pointing +x)
-        c << gf.components.rectangle(size=(finger_l, finger_w), layer=layer, centered=False, port_type=None, port_orientations=None).move((x_left, y))
+        rect_l = gf.components.rectangle(size=(finger_l, finger_w), layer=layer, centered=False)
+        ref_l = c << rect_l
+        ref_l.move((x_left, y))
         # right, moving fingers (pointing -x)
-        c << gf.components.rectangle(size=(finger_l, finger_w), layer=layer, centered=False).move((x_right, y))
+        rect_r = gf.components.rectangle(size=(finger_l, finger_w), layer=layer, centered=False)
+        ref_r = c << rect_r
+        ref_r.move((x_right, y))
 
     # Four folded springs to anchors (schematic "Π" shape segments)
     def folded_spring(cx, cy):
         s = gf.Component()
-        # three rectangles to emulate a folded spring
-        s << gf.components.rectangle(size=(spring_w, spring_l), layer=layer, centered=True)
-        s << gf.components.rectangle(size=(spring_l*0.5, spring_w), layer=layer, centered=True).movey(+spring_l/2 - spring_w/2)
-        s << gf.components.rectangle(size=(spring_l*0.5, spring_w), layer=layer, centered=True).movey(-spring_l/2 + spring_w/2)
+        # three rectangles to emulate a folded spring, using explicit reference and move
+        rect_mid = gf.components.rectangle(size=(spring_w, spring_l), layer=layer, centered=True)
+        ref_mid = s << rect_mid
+
+        rect_top = gf.components.rectangle(size=(spring_l*0.5, spring_w), layer=layer, centered=True)
+        ref_top = s << rect_top
+        ref_top.movey(+spring_l/2 - spring_w/2)
+
+        rect_bot = gf.components.rectangle(size=(spring_l*0.5, spring_w), layer=layer, centered=True)
+        ref_bot = s << rect_bot
+        ref_bot.movey(-spring_l/2 + spring_w/2)
+
         ref = c << s
         ref.center = (cx, cy)
         return ref
@@ -176,12 +196,12 @@ def switch_cell() -> gf.Component:
     outline.move((-TILE/2, -TILE/2))
 
     # 1) Waveguide crossing at origin
-    xing = c << plus_crossing(wg_width=wg_width, length=crossing_size, layer=L_WG)
+    xing = c << plus_crossing(wg_width=WG_W, length=CROSSING_SIZE, layer=LAYER["WG"])
     xing.center = (0, 0)
 
     # 2) Couplers: place two, one serving horizontal arm, one serving vertical arm
-    dc1 = c << coupler_gap_adjustable(length=COUPLER_LEN, gap=GAP_INIT)   # west/east arm
-    dc2 = c << coupler_gap_adjustable(length=COUPLER_LEN, gap=GAP_INIT)   # south/north arm
+    dc1 = c << coupler_gap_adjustable(length=COUPLER_LEN, gap=GAP_INIT, wg_width=WG_W, layer=LAYER["WG"])   # west/east arm
+    dc2 = c << coupler_gap_adjustable(length=COUPLER_LEN, gap=GAP_INIT, wg_width=WG_W, layer=LAYER["WG"])   # south/north arm
     # Position relative to crossing with some clearance
     dc1.center = (-COUPLER_LEN/2 - COUPLER_TO_CROSSING_GAP, +COUPLER_LEN/2)  # NW
     dc2.rotate(90)
