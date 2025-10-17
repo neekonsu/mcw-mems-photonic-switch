@@ -1,0 +1,15 @@
+name: tower-tapeout
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - numpy>=1.24.0
+  - scipy>=1.10.0
+  - matplotlib>=3.7.0
+  - pandas>=2.0.0
+  - shapely>=2.0.0
+  - pip:
+      - gdsfactory>=7.0.0
+      - klayout>=0.28.0

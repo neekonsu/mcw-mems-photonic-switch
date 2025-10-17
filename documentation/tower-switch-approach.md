@@ -119,3 +119,152 @@ The following parameters need to be inferred from context, images, or convention
 2. Infer missing parameters from paper figures and conventional design practices
 3. Set up Lumerical simulation templates for directional couplers
 4. Obtain Tower SiPho PDK for layer mapping and DRC rules
+
+---
+
+## Development Environment Setup
+
+This section documents the installation and setup process for the GDSFactory-based design workflow.
+
+### Prerequisites
+
+- **Miniforge/Mambaforge**: Package and environment management
+  - Provides `conda` and `mamba` commands
+  - Download from: https://github.com/conda-forge/miniforge
+
+### Installation Steps
+
+#### 1. Create Conda Environment
+
+Navigate to the project directory and create the environment from the provided configuration file:
+
+```bash
+cd /Users/neekon/git/mcw/tower-tapeout
+mamba env create -f environment.yml
+```
+
+The `environment.yml` file includes:
+- **Python 3.11**: Base interpreter
+- **GDSFactory ≥7.0.0**: Parametric layout generation
+- **KLayout ≥0.28.0**: GDS viewer and editor
+- **NumPy, SciPy, Matplotlib**: Scientific computing and visualization
+- **Pandas, Shapely**: Data handling and geometry operations
+
+#### 2. Activate Environment
+
+```bash
+conda activate tower-tapeout
+```
+
+**Note**: Always activate this environment before running any design scripts.
+
+#### 3. Verify Installation
+
+Run the provided test script to verify all packages are correctly installed:
+
+```bash
+python test_setup.py
+```
+
+Expected output:
+```
+==================================================
+GDSFactory Setup Verification
+==================================================
+Testing package imports...
+✓ GDSFactory 9.19.0 (or later)
+✓ NumPy 2.3.3 (or later)
+✓ Matplotlib 3.10.7 (or later)
+
+Testing basic component creation...
+✓ Created component 'test_rect'
+✓ Created built-in rectangle component
+
+==================================================
+✓ All tests passed! Setup is complete.
+==================================================
+```
+
+### Repository Structure
+
+The setup process creates the following directory structure:
+
+```
+tower-tapeout/
+├── environment.yml          # Conda environment specification
+├── .gitignore              # Python/conda artifacts excluded from git
+├── test_setup.py           # Installation verification script
+├── components/             # GDSFactory component definitions (Python)
+├── layouts/                # Generated GDS layout files
+├── simulations/            # Lumerical simulation files
+├── drc/                    # DRC reports and scripts
+└── documentation/          # Design documentation
+    └── tower-switch-approach.md
+```
+
+### Common Commands
+
+#### Environment Management
+
+```bash
+# Activate environment
+conda activate tower-tapeout
+
+# Deactivate environment
+conda deactivate
+
+# Update environment from yml file
+mamba env update -f environment.yml
+
+# List installed packages
+conda list
+
+# Remove environment (if needed)
+conda env remove -n tower-tapeout
+```
+
+#### Running Design Scripts
+
+All Python scripts should be run with the `tower-tapeout` environment activated:
+
+```bash
+# Activate environment first
+conda activate tower-tapeout
+
+# Generate a component layout
+python components/directional_coupler.py
+
+# Run verification tests
+python test_setup.py
+```
+
+#### Viewing GDS Files
+
+```bash
+# Open GDS file in KLayout (if installed via conda)
+klayout layouts/directional_coupler.gds
+
+# Or use system KLayout installation
+# macOS:
+open -a KLayout layouts/directional_coupler.gds
+```
+
+### Troubleshooting
+
+**Issue**: `mamba: command not found`
+- **Solution**: Ensure Miniforge is installed and shell is restarted. Try using `conda` instead of `mamba`.
+
+**Issue**: `ModuleNotFoundError: No module named 'gdsfactory'`
+- **Solution**: Ensure the `tower-tapeout` environment is activated: `conda activate tower-tapeout`
+
+**Issue**: KLayout not opening GDS files
+- **Solution**: Install KLayout separately from https://www.klayout.de if conda installation has issues
+
+### Next Steps
+
+After successful installation:
+
+1. Review the component design examples in `CLAUDE.md`
+2. Start implementing the directional coupler component
+3. Use KLayout to visualize generated layouts
+4. Reference Han et al. paper for design parameters
