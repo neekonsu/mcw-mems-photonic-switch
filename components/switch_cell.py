@@ -27,6 +27,8 @@ def create_mems_switch_unit():
     LAYER_BOX = (10, 0)         # BOX layer (buried oxide / release etch)
     LAYER_METAL = (41, 0)       # Metal pads (Au/Cr)
 
+    # TODO Is there meaning tied to the layer numbers; should I look these up in some table to read more or are they arbitrary
+
     # =========================================================================
     # CELL PARAMETERS (measured design)
     # =========================================================================
@@ -39,58 +41,70 @@ def create_mems_switch_unit():
     # =========================================================================
     # REFERENCE PARAMETERS (from paper - for reference only)
     # =========================================================================
-    # Waveguide parameters
-    wg_width = 0.45          # 450 nm
-    wg_bend_radius = 5.0     # Typical for silicon photonics
+    # WAVEGUIDE AND BEND parameters
+    wg_width = 0.45          # 450 nm TODO optimize in lumerical
+    wg_bend_radius = 5.0     # Typical for silicon photonics TODO optimize in lumerical
 
-    # Directional coupler parameters
-    coupler_length = 20.0    # μm
-    initial_gap = 0.55       # 550 nm (OFF state)
+    # DIRECTIONAL COUPLER parameters
+    coupler_length = 20.0    # μm TODO optimize in lumerical
+    initial_gap = 0.55       # 550 nm (OFF state) TODO optimize in lumerical
 
-    # Comb drive parameters
-    comb_footprint = 88.0    # μm square
-    comb_finger_width = 0.3  # 300 nm
-    comb_finger_gap = 0.4    # 400 nm
-    comb_finger_pitch = comb_finger_width + comb_finger_gap  # 700 nm
-    num_finger_pairs = 44
-    comb_finger_length = 20.0  # Estimated from footprint
+    # COMB DRIVE parameters TODO use an optimal comb drive based on literature, forward design only
+    comb_footprint = 88.0    # μm square TODO claude translated this from textual description, may not be a real design parameter; this is likely the footprint/realestate of the comb drive
+    comb_finger_width = 0.3  # 300 nm TODO optimize in lumerical
+    comb_finger_gap = 0.4    # 400 nm TODO optimize in lumerical
+    comb_finger_pitch = comb_finger_width + comb_finger_gap  # 700 nm TODO optimize in lumerical
+    num_finger_pairs = 44 # TODO optimize in lumerical
+    comb_finger_length = 20.0  # Estimated from footprint TODO optimize in lumerical
 
-    # Spring parameters
+    # SPRING parameters
     spring_width = 0.3       # 300 nm
     spring_length = 30.0     # μm per segment
     spring_turns = 4         # Number of turns in folded spring
+
+    # GRATING COUPLER parameters
+    # TODO use an optimal comb drive based on literature, forward design only
 
     # =========================================================================
     # GEOMETRY DEFINITION
     # =========================================================================
 
+    # NOTE the center/origin is defined as the center of the 180um x 180um cell, so (90um,90um) is the top right and -(90um,90um) is the bottom left 
+
     # Waveguide crossing point: 50μm left and down from top-right corner
-    # Cell centered at origin, so top-right is at (cell_size/2, cell_size/2)
-    cross_x = cell_size/2 - 50.0  # 40 μm from center
-    cross_y = cell_size/2 - 50.0  # 40 μm from center
+    # Cell centered at origin, so top-right is at (cell_size/2, cell_size/2) TODO remove old relative coordinate code
+    # cross_x = cell_size/2 - 50.0  # 40 μm from center
+    # cross_y = cell_size/2 - 50.0  # 40 μm from center
+    cross_x, cross_y = (40.0, 40.0) # um <- tuple format more readable, hardcoding coordinates for robustness
 
     # Vertical waveguide from cross to top edge (drop1 output)
+    # NOTE replaced relative coordinate for cell edge, reordered to match personal waveguide definition convention (short edge - short edge)
+    # TODO make sure this is accessed, currently not
     drop1_wg = c.add_polygon([
         (cross_x - wg_width/2, cross_y),
         (cross_x + wg_width/2, cross_y),
-        (cross_x + wg_width/2, cell_size/2),
-        (cross_x - wg_width/2, cell_size/2)
+        (cross_x - wg_width/2, 90.0),
+        (cross_x + wg_width/2, 90.0)
     ], layer=LAYER_SI)
 
     # Horizontal waveguide from cross to right edge (through1 output)
+    # NOTE replaced relative coordinate for cell edge, reordered to match personal waveguide definition convention (short edge - short edge)
+    # TODO make sure this is accessed, currently not
     through1_wg = c.add_polygon([
         (cross_x, cross_y - wg_width/2),
-        (cell_size/2, cross_y - wg_width/2),
-        (cell_size/2, cross_y + wg_width/2),
-        (cross_x, cross_y + wg_width/2)
+        (cross_x, cross_y + wg_width/2),
+        (90.0, cross_y - wg_width/2),
+        (90.0, cross_y + wg_width/2)
     ], layer=LAYER_SI)
 
     # Vertical waveguide from cross extending down 50μm
+    # NOTE replaced relative coordinate for cell edge, reordered to match personal waveguide definition convention (short edge - short edge)
+    # TODO make sure this is accessed, currently not
     down_wg = c.add_polygon([
-        (cross_x - wg_width/2, cross_y - 50.0),
-        (cross_x + wg_width/2, cross_y - 50.0),
+        (cross_x - wg_width/2, cross_y),
         (cross_x + wg_width/2, cross_y),
-        (cross_x - wg_width/2, cross_y)
+        (cross_x - wg_width/2, -10.0),
+        (cross_x + wg_width/2, -10.0)
     ], layer=LAYER_SI)
 
     # Horizontal waveguide from cross extending left 50μm
@@ -102,10 +116,11 @@ def create_mems_switch_unit():
     ], layer=LAYER_SI)
 
     # Define diamond vertex points
-    diamond_top = (cross_x, cell_size/2)           # (40, 90)
-    diamond_right = (cell_size/2, cross_y)         # (90, 40)
-    diamond_bottom = (cross_x, cross_y - 50.0)     # (40, -10)
-    diamond_left = (cross_x - 50.0, cross_y)       # (-10, 40)
+    # TODO Don't prioritize until the first version of the complete cell is finished, but compare the Han 2021 paper to a few others and make this support structure accordingly
+    diamond_top = (cross_x, 90.0)           # (40, 90)
+    diamond_right = (90.0, cross_y)         # (90, 40)
+    diamond_bottom = (cross_x, -10.0)     # (40, -10)
+    diamond_left = (-10.0, cross_y)       # (-10, 40)
 
     # Diamond (rotated square) with side length 50√2 μm
     diamond = c.add_polygon([
@@ -124,16 +139,19 @@ def create_mems_switch_unit():
     # Final position: 20μm left of diamond_left, 10μm down = (-30, 30)
 
     # Straight waveguide extension (10μm left from diamond_left)
-    straight_start_x = cross_x - 50.0  # diamond_left x-coordinate
-    straight_start_y = cross_y         # diamond_left y-coordinate
-    straight_end_x = straight_start_x - 10.0
-    straight_end_y = straight_start_y
+    # NOTE Renamed straight waveguide from crossing to s-bend for direction and unique number
+    straight_left_1_start_x = -10.0            # diamond_left x-coordinate
+    straight_left_1_start_y = cross_y          # diamond_left y-coordinate
 
+    straight_left_1_end_x = straight_left_1_start_x - 10.0  # end of left straight wg, start of s-bend, x-coordinate
+    straight_left_1_end_y = cross_y                         # end of left straight wg, start of s-bend, y-coordinate
+
+    # TODO make sure this is accessed, currently not
     straight_wg_left = c.add_polygon([
-        (straight_start_x - wg_width/2, straight_start_y - wg_width/2),
-        (straight_end_x, straight_start_y - wg_width/2),
-        (straight_end_x, straight_start_y + wg_width/2),
-        (straight_start_x + wg_width/2, straight_start_y + wg_width/2)
+        (straight_left_1_start_x, straight_left_1_start_y - wg_width/2),
+        (straight_left_1_start_x, straight_left_1_start_y + wg_width/2),
+        (straight_left_1_end_x, straight_left_1_end_y - wg_width/2),
+        (straight_left_1_end_x, straight_left_1_end_y + wg_width/2)
     ], layer=LAYER_SI)
 
     # S-bend waveguide (10μm left + 10μm down)
@@ -145,7 +163,8 @@ def create_mems_switch_unit():
     s_end_x = s_start_x - 10.0  # Total 10μm left
     s_end_y = s_start_y - 10.0  # Total 10μm down
 
-    # Use GDSFactory's built-in S-bend component
+    # Use GDSFactory's built-in S-bend component TODO determine if we can build our own or construct with multiple semi-circles or bézier curves; what is optimal bend shape?
+    # TODO will optimize bend in Lumerical
     # S-bend with horizontal and vertical offsets
     # Set radius_min to 3.0μm for tight bends (typical for Si photonics)
     s_bend_component = gf.components.bend_s(
@@ -198,7 +217,7 @@ def create_mems_switch_unit():
 
     # Use GDSFactory's built-in S-bend component
     bottom_s_bend_component = gf.components.bend_s(
-        size=(10.0, -10.0),  # (horizontal offset, vertical offset)
+        size=(10.0, -10.0),  # (horizontal offset, vertical offset) TODO this attribute should have signs flipped to match desired directionality of s-bends
         cross_section=gf.cross_section.cross_section(
             width=wg_width,
             layer=LAYER_SI,
@@ -220,7 +239,7 @@ def create_mems_switch_unit():
 
     # =========================================================================
     # CONTINUE FROM S_BEND_LEFT: 25μm STRAIGHT + REVERSE S-BEND (LEFT & UP)
-    # =========================================================================
+    # ========================================================================= TODO apply above todos relevant to s-bends below
     # Current position: s_bend_left = (-30, 30)
     # Extend left 25μm to (-55, 30)
     # Then S-bend left 10μm and up 10μm to (-65, 40) - cancels original down shift
@@ -351,7 +370,7 @@ def create_mems_switch_unit():
         (drop2_start_x + wg_width/2, drop2_start_y - wg_width/2)
     ], layer=LAYER_SI)
 
-    # Add "drop2" label at the end of bottom waveguide
+    # Add "drop2" label at the end of bottom waveguide TODO determine how labelling ports of a cell works with gdsfactory
     c.add_label(
         text="drop2",
         position=(drop2_end_x, drop2_end_y),
