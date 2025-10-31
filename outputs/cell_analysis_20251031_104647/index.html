@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDS Shape Analysis - mems_switch_unit.gds</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007acc;
+            padding-bottom: 10px;
+        }
+        .metadata {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .shape-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .shape-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .shape-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .shape-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #007acc;
+            margin-bottom: 8px;
+        }
+        .shape-info {
+            font-size: 13px;
+            color: #666;
+            margin: 3px 0;
+        }
+        .shape-image {
+            margin-top: 10px;
+        }
+        .shape-image img {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .layer-section {
+            margin-bottom: 40px;
+        }
+        .layer-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .layer-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .layer-stats {
+            font-size: 14px;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+        .links {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .links a {
+            color: #007acc;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .stat-box {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007acc;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .shape-type {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>GDS Shape Analysis</h1>
+
+    <div class="metadata">
+        <h2>File Information</h2>
+        <p><strong>GDS File:</strong> /Users/neekon/git/mcw/tower-tapeout/layouts/mems_switch_unit.gds</p>
+        <p><strong>Analysis Time:</strong> 2025-10-31 10:46:54</p>
+        <p><strong>Total Shapes:</strong> 99</p>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value">99</div>
+                <div class="stat-label">Total Shapes</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Layers</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">26</div>
+                <div class="stat-label">Polygons</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">31</div>
+                <div class="stat-label">Paths</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layer-section">
+        <div class="layer-header">
+            <h2 class="layer-title">Layer 1/0</h2>
+            <div class="layer-stats">81 shapes</div>
+        </div>
+        <div class="shape-grid">
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0001 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 36.56 × 34.93 µm</div>
+                <div class="shape-info">Points: 50</div>
+                <div class="shape-info">Area: 132.467 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0001_L1_0.png" alt="Shape 0001" onclick="window.open('shape_0001_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0001_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0002 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 133.24 × 133.71 µm</div>
+                <div class="shape-info">Points: 810</div>
+                <div class="shape-info">Area: 1423.398 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0002_L1_0.png" alt="Shape 0002" onclick="window.open('shape_0002_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0002_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0003 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0003_L1_0.png" alt="Shape 0003" onclick="window.open('shape_0003_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0003_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0004 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0004_L1_0.png" alt="Shape 0004" onclick="window.open('shape_0004_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0004_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0005 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0005_L1_0.png" alt="Shape 0005" onclick="window.open('shape_0005_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0005_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0006 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 6.66 × 6.72 µm</div>
+                <div class="shape-info">Points: 10</div>
+                <div class="shape-info">Area: 8.867 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0006_L1_0.png" alt="Shape 0006" onclick="window.open('shape_0006_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0006_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0007 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 6.69 × 6.74 µm</div>
+                <div class="shape-info">Points: 10</div>
+                <div class="shape-info">Area: 9.120 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0007_L1_0.png" alt="Shape 0007" onclick="window.open('shape_0007_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0007_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0008 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0008_L1_0.png" alt="Shape 0008" onclick="window.open('shape_0008_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0008_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0009 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 6.69 × 6.74 µm</div>
+                <div class="shape-info">Points: 10</div>
+                <div class="shape-info">Area: 9.120 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0009_L1_0.png" alt="Shape 0009" onclick="window.open('shape_0009_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0009_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0010 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 6.66 × 6.72 µm</div>
+                <div class="shape-info">Points: 10</div>
+                <div class="shape-info">Area: 8.867 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0010_L1_0.png" alt="Shape 0010" onclick="window.open('shape_0010_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0010_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0011 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0011_L1_0.png" alt="Shape 0011" onclick="window.open('shape_0011_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0011_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0012 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0012_L1_0.png" alt="Shape 0012" onclick="window.open('shape_0012_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0012_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0013 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0013_L1_0.png" alt="Shape 0013" onclick="window.open('shape_0013_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0013_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0014 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 1.52 × 1.52 µm</div>
+                <div class="shape-info">Points: 3</div>
+                <div class="shape-info">Area: 1.068 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0014_L1_0.png" alt="Shape 0014" onclick="window.open('shape_0014_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0014_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0015 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 3.33 × 3.33 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 5.554 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0015_L1_0.png" alt="Shape 0015" onclick="window.open('shape_0015_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0015_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0016 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 3.33 × 3.33 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 5.554 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0016_L1_0.png" alt="Shape 0016" onclick="window.open('shape_0016_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0016_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0017 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 10.00 × 10.00 µm</div>
+                <div class="shape-info">Points: 50</div>
+
+                <div class="shape-image">
+                    <img src="shape_0017_L1_0.png" alt="Shape 0017" onclick="window.open('shape_0017_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0017_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0018 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 10.00 × 10.00 µm</div>
+                <div class="shape-info">Points: 50</div>
+
+                <div class="shape-image">
+                    <img src="shape_0018_L1_0.png" alt="Shape 0018" onclick="window.open('shape_0018_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0018_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0019 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 10.00 × 10.00 µm</div>
+                <div class="shape-info">Points: 50</div>
+
+                <div class="shape-image">
+                    <img src="shape_0019_L1_0.png" alt="Shape 0019" onclick="window.open('shape_0019_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0019_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0020 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 10.00 × 10.00 µm</div>
+                <div class="shape-info">Points: 50</div>
+
+                <div class="shape-image">
+                    <img src="shape_0020_L1_0.png" alt="Shape 0020" onclick="window.open('shape_0020_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0020_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0021 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 10.00 × 10.00 µm</div>
+                <div class="shape-info">Points: 50</div>
+
+                <div class="shape-image">
+                    <img src="shape_0021_L1_0.png" alt="Shape 0021" onclick="window.open('shape_0021_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0021_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0022 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 10.00 × 10.00 µm</div>
+                <div class="shape-info">Points: 50</div>
+
+                <div class="shape-image">
+                    <img src="shape_0022_L1_0.png" alt="Shape 0022" onclick="window.open('shape_0022_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0022_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0023 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 8.02 × 6.97 µm</div>
+                <div class="shape-info">Points: 36</div>
+
+                <div class="shape-image">
+                    <img src="shape_0023_L1_0.png" alt="Shape 0023" onclick="window.open('shape_0023_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0023_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0024 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 0.00 × 30.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0024_L1_0.png" alt="Shape 0024" onclick="window.open('shape_0024_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0024_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0025 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 0.00 × 30.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0025_L1_0.png" alt="Shape 0025" onclick="window.open('shape_0025_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0025_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0026 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 6.97 × 8.02 µm</div>
+                <div class="shape-info">Points: 36</div>
+
+                <div class="shape-image">
+                    <img src="shape_0026_L1_0.png" alt="Shape 0026" onclick="window.open('shape_0026_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0026_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0027 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 30.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0027_L1_0.png" alt="Shape 0027" onclick="window.open('shape_0027_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0027_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0028 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 30.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0028_L1_0.png" alt="Shape 0028" onclick="window.open('shape_0028_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0028_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0029 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 99.06 × 98.97 µm</div>
+                <div class="shape-info">Points: 22</div>
+
+                <div class="shape-image">
+                    <img src="shape_0029_L1_0.png" alt="Shape 0029" onclick="window.open('shape_0029_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0029_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0030 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 30.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0030_L1_0.png" alt="Shape 0030" onclick="window.open('shape_0030_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0030_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0031 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 50.06 × 0.00 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0031_L1_0.png" alt="Shape 0031" onclick="window.open('shape_0031_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0031_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0032 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 0.00 × 30.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0032_L1_0.png" alt="Shape 0032" onclick="window.open('shape_0032_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0032_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0033 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 0.00 × 50.00 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0033_L1_0.png" alt="Shape 0033" onclick="window.open('shape_0033_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0033_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0034 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 30.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0034_L1_0.png" alt="Shape 0034" onclick="window.open('shape_0034_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0034_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0035 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 50.06 × 0.00 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0035_L1_0.png" alt="Shape 0035" onclick="window.open('shape_0035_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0035_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0036 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 0.00 × 30.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+
+                <div class="shape-image">
+                    <img src="shape_0036_L1_0.png" alt="Shape 0036" onclick="window.open('shape_0036_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0036_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0037 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 0.00 × 50.00 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0037_L1_0.png" alt="Shape 0037" onclick="window.open('shape_0037_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0037_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0038 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0038_L1_0.png" alt="Shape 0038" onclick="window.open('shape_0038_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0038_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0039 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0039_L1_0.png" alt="Shape 0039" onclick="window.open('shape_0039_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0039_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0040 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0040_L1_0.png" alt="Shape 0040" onclick="window.open('shape_0040_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0040_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0041 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0041_L1_0.png" alt="Shape 0041" onclick="window.open('shape_0041_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0041_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0042 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0042_L1_0.png" alt="Shape 0042" onclick="window.open('shape_0042_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0042_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0043 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0043_L1_0.png" alt="Shape 0043" onclick="window.open('shape_0043_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0043_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0044 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0044_L1_0.png" alt="Shape 0044" onclick="window.open('shape_0044_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0044_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0045 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 11.80 × 11.80 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0045_L1_0.png" alt="Shape 0045" onclick="window.open('shape_0045_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0045_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0046 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 0.40 × 50.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0046_L1_0.png" alt="Shape 0046" onclick="window.open('shape_0046_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0046_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0047 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 0.40 × 50.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0047_L1_0.png" alt="Shape 0047" onclick="window.open('shape_0047_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0047_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0048 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 50.00 × 0.40 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0048_L1_0.png" alt="Shape 0048" onclick="window.open('shape_0048_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0048_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0049 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 50.00 × 0.40 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0049_L1_0.png" alt="Shape 0049" onclick="window.open('shape_0049_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0049_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0050 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 0.40 × 50.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0050_L1_0.png" alt="Shape 0050" onclick="window.open('shape_0050_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0050_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0051 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 50.00 × 0.40 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0051_L1_0.png" alt="Shape 0051" onclick="window.open('shape_0051_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0051_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0052 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 0.40 × 50.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0052_L1_0.png" alt="Shape 0052" onclick="window.open('shape_0052_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0052_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0053 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 0.40 × 50.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0053_L1_0.png" alt="Shape 0053" onclick="window.open('shape_0053_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0053_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0054 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 50.00 × 0.40 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0054_L1_0.png" alt="Shape 0054" onclick="window.open('shape_0054_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0054_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0055 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 50.00 × 0.40 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0055_L1_0.png" alt="Shape 0055" onclick="window.open('shape_0055_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0055_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0056 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 0.40 × 50.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0056_L1_0.png" alt="Shape 0056" onclick="window.open('shape_0056_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0056_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0057 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 50.00 × 0.40 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 20.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0057_L1_0.png" alt="Shape 0057" onclick="window.open('shape_0057_L1_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0057_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0058 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0058_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0059 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0059_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0060 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0060_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0061 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0061_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0062 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0062_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0063 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0063_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0064 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0064_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0065 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0065_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0066 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0066_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0067 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0067_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0068 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0068_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0069 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0069_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0070 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0070_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0071 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0071_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0072 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0072_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0073 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0073_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0074 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0074_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0075 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0075_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0076 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0076_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0077 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0077_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0078 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0078_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0079 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0079_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0080 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0080_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0081 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0081_L1_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="layer-section">
+        <div class="layer-header">
+            <h2 class="layer-title">Layer 2/0</h2>
+            <div class="layer-stats">17 shapes</div>
+        </div>
+        <div class="shape-grid">
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0082 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 172.84 × 171.56 µm</div>
+                <div class="shape-info">Points: 366</div>
+                <div class="shape-info">Area: 17715.680 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0082_L2_0.png" alt="Shape 0082" onclick="window.open('shape_0082_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0082_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0083 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 38.41 × 38.48 µm</div>
+                <div class="shape-info">Points: 180</div>
+                <div class="shape-info">Area: 680.197 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0083_L2_0.png" alt="Shape 0083" onclick="window.open('shape_0083_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0083_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0084 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 37.95 × 38.05 µm</div>
+                <div class="shape-info">Points: 180</div>
+                <div class="shape-info">Area: 659.968 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0084_L2_0.png" alt="Shape 0084" onclick="window.open('shape_0084_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0084_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0085 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 31.23 × 31.23 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 424.520 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0085_L2_0.png" alt="Shape 0085" onclick="window.open('shape_0085_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0085_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0086 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 27.30 × 27.30 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 367.164 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0086_L2_0.png" alt="Shape 0086" onclick="window.open('shape_0086_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0086_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0087 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 89.90 × 89.82 µm</div>
+                <div class="shape-info">Points: 10</div>
+                <div class="shape-info">Area: 342.517 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0087_L2_0.png" alt="Shape 0087" onclick="window.open('shape_0087_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0087_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0088 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 100.00 × 100.00 µm</div>
+                <div class="shape-info">Points: 9</div>
+                <div class="shape-info">Area: 2030.000 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0088_L2_0.png" alt="Shape 0088" onclick="window.open('shape_0088_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0088_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0089 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 3.33 × 3.33 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 5.554 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0089_L2_0.png" alt="Shape 0089" onclick="window.open('shape_0089_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0089_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0090 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 3.33 × 3.33 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 5.554 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0090_L2_0.png" alt="Shape 0090" onclick="window.open('shape_0090_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0090_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0091 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 0.00 × 50.00 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0091_L2_0.png" alt="Shape 0091" onclick="window.open('shape_0091_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0091_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0092 <span class="shape-type">Path</span></div>
+                <div class="shape-info">Size: 50.06 × 0.00 µm</div>
+                <div class="shape-info">Points: 2</div>
+
+                <div class="shape-image">
+                    <img src="shape_0092_L2_0.png" alt="Shape 0092" onclick="window.open('shape_0092_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0092_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0093 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 2.00 × 55.52 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 111.044 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0093_L2_0.png" alt="Shape 0093" onclick="window.open('shape_0093_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0093_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0094 <span class="shape-type">Box</span></div>
+                <div class="shape-info">Size: 54.83 × 2.00 µm</div>
+                <div class="shape-info">Points: 4</div>
+                <div class="shape-info">Area: 109.656 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0094_L2_0.png" alt="Shape 0094" onclick="window.open('shape_0094_L2_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0094_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0095 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0095_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0096 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0096_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0097 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0097_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0098 <span class="shape-type">Text</span></div>
+                <div class="shape-info">Size: 0.00 × 0.00 µm</div>
+                <div class="shape-info">Points: 0</div>
+
+                <div class="links">
+                    <a href="shape_0098_L2_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="layer-section">
+        <div class="layer-header">
+            <h2 class="layer-title">Layer 3/0</h2>
+            <div class="layer-stats">1 shapes</div>
+        </div>
+        <div class="shape-grid">
+
+            <div class="shape-card">
+                <div class="shape-name">Shape 0099 <span class="shape-type">Polygon</span></div>
+                <div class="shape-info">Size: 172.84 × 171.56 µm</div>
+                <div class="shape-info">Points: 366</div>
+                <div class="shape-info">Area: 17715.705 µm²</div>
+
+                <div class="shape-image">
+                    <img src="shape_0099_L3_0.png" alt="Shape 0099" onclick="window.open('shape_0099_L3_0.png', '_blank')">
+                </div>
+
+                <div class="links">
+                    <a href="shape_0099_L3_0_info.txt" target="_blank">📄 View Details</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; text-align: center;">
+        Generated by visualize_all_cells.py | Tower Semiconductor MEMS Switch Tapeout
+    </div>
+</body>
+</html>

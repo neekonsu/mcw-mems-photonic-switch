@@ -1,0 +1,27 @@
+============================================================
+CELL METADATA: create_mems_switch_unit
+============================================================
+
+Cell Index: 0
+
+GEOMETRY:
+------------------------------------------------------------
+Bounding Box: (-160283, -160106) to (90000, 90000)
+Width: 250.283 µm
+Height: 250.106 µm
+Area: 62597.280 µm²
+
+Total Shapes: 99
+
+Shapes per Layer:
+  Layer 1/0: 81 shapes
+  Layer 2/0: 17 shapes
+  Layer 3/0: 1 shapes
+
+HIERARCHY:
+------------------------------------------------------------
+Number of Instances: 0
+
+Child Cells: None (primitive cell)
+
+============================================================
