@@ -37,11 +37,8 @@ n_gaps = 10;
 gaps = linspace(gap_start, gap_stop, n_gaps);
 
 # Storage for results
-# We'll store S-parameters for all four ports
 S11 = matrix(n_gaps);  # Reflection at port 1
 S21 = matrix(n_gaps);  # Port 1 to Port 2
-S31 = matrix(n_gaps);  # Port 1 to Port 3
-S41 = matrix(n_gaps);  # Port 1 to Port 4
 
 # ==============================================================================
 # PERFORM GAP SWEEP
@@ -66,6 +63,9 @@ for(i=1:n_gaps) {
     # Update waveguide positions based on new gap
     # ----------------------------------------------------------------------
     
+    # Switch to layout mode to modify geometry
+    switchtolayout;
+    
     # Waveguide 1 position (top waveguide, +y direction)
     wg1_y_position = current_gap/2 + wg_width_y/2;
     
@@ -84,30 +84,27 @@ for(i=1:n_gaps) {
     # Run EME simulation
     # ----------------------------------------------------------------------
     
+    # Select EME solver and run
     select("EME");
-    emepropagate;  # Use emepropagate for faster computation
+    run;  # This will run the EME solver
     
     # ----------------------------------------------------------------------
     # Extract S-parameters
     # ----------------------------------------------------------------------
     
     # Extract results from each port
-    # The exact port naming depends on your setup
     S11(i) = getresult("EME::Ports::port_1", "expansion for port_1");
     S21(i) = getresult("EME::Ports::port_1", "expansion for port_2");
     
-    # Check if you have more ports and adjust accordingly
-    # You may need to uncomment these if you have 4 ports:
-    # S31(i) = getresult("EME::Ports::port_1", "expansion for port_3");
-    # S41(i) = getresult("EME::Ports::port_1", "expansion for port_4");
-    
 }
+
+# Switch back to layout
+switchtolayout;
 
 # ==============================================================================
 # CALCULATE TRANSMISSION AND COUPLING EFFICIENCY
 # ==============================================================================
 
-# For a 2-port system (input and output on same waveguide)
 # Calculate power
 P_transmitted = abs(S21)^2;   # Power transmitted through
 P_reflected = abs(S11)^2;      # Power reflected
