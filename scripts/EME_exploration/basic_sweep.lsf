@@ -7,6 +7,24 @@ clear;
 switchtolayout;
 
 # ==============================================================================
+# GET CURRENT GEOMETRY FROM EXISTING OBJECTS
+# ==============================================================================
+
+# Get current waveguide dimensions from waveguide_1
+select("waveguide_1");
+wg_width_y = get("y span");
+wg_height_z = get("z max") - get("z min");
+wg_length_x = get("x span");
+
+?"";
+?"==============================================================";
+?"CURRENT GEOMETRY";
+?"==============================================================";
+?"Waveguide width (y): " + num2str(wg_width_y*1e6) + " um";
+?"Waveguide height (z): " + num2str(wg_height_z*1e6) + " um";
+?"Waveguide length (x): " + num2str(wg_length_x*1e6) + " um";
+
+# ==============================================================================
 # SWEEP PARAMETERS
 # ==============================================================================
 
@@ -21,9 +39,9 @@ gaps = linspace(gap_start, gap_stop, n_gaps);
 # Storage for results
 # We'll store S-parameters for all four ports
 S11 = matrix(n_gaps);  # Reflection at port 1
-S21 = matrix(n_gaps);  # Port 1 to Port 2 (same side)
-S31 = matrix(n_gaps);  # Port 1 to Port 3 (through - top waveguide)
-S41 = matrix(n_gaps);  # Port 1 to Port 4 (cross - bottom waveguide, coupled)
+S21 = matrix(n_gaps);  # Port 1 to Port 2
+S31 = matrix(n_gaps);  # Port 1 to Port 3
+S41 = matrix(n_gaps);  # Port 1 to Port 4
 
 # ==============================================================================
 # PERFORM GAP SWEEP
@@ -73,14 +91,15 @@ for(i=1:n_gaps) {
     # Extract S-parameters
     # ----------------------------------------------------------------------
     
-    # Port 1 (input) to all other ports
-    S11(i) = getresult("EME::Ports::port_1", "expansion for port_1");  # Reflection
-    S21(i) = getresult("EME::Ports::port_1", "expansion for port_2");  # Same side
+    # Extract results from each port
+    # The exact port naming depends on your setup
+    S11(i) = getresult("EME::Ports::port_1", "expansion for port_1");
+    S21(i) = getresult("EME::Ports::port_1", "expansion for port_2");
     
-    # For a simple two-waveguide structure, we measure coupling from top to bottom
-    # Port 1 is input (top left), we want to see power in port 2 (bottom left - coupled)
-    # Since your structure has straight waveguides, the main coupling is along x
-    # We'll measure transmission through top (port_1 to output) and cross-coupling
+    # Check if you have more ports and adjust accordingly
+    # You may need to uncomment these if you have 4 ports:
+    # S31(i) = getresult("EME::Ports::port_1", "expansion for port_3");
+    # S41(i) = getresult("EME::Ports::port_1", "expansion for port_4");
     
 }
 
@@ -88,18 +107,17 @@ for(i=1:n_gaps) {
 # CALCULATE TRANSMISSION AND COUPLING EFFICIENCY
 # ==============================================================================
 
-# Calculate power transmission and coupling
-T_same = abs(S21)^2;      # Power staying in same waveguide
-T_coupled = abs(S41)^2;   # Power coupled to other waveguide  
-R = abs(S11)^2;           # Reflection
-
-# Coupling efficiency (percentage of power coupled)
-coupling_efficiency = T_coupled ./ (T_coupled + T_same + R) * 100;
+# For a 2-port system (input and output on same waveguide)
+# Calculate power
+P_transmitted = abs(S21)^2;   # Power transmitted through
+P_reflected = abs(S11)^2;      # Power reflected
 
 # Convert to dB
-T_same_dB = 10*log10(T_same);
-T_coupled_dB = 10*log10(T_coupled);
-R_dB = 10*log10(R);
+P_transmitted_dB = 10*log10(P_transmitted);
+P_reflected_dB = 10*log10(P_reflected);
+
+# Coupling loss (how much power is lost due to coupling)
+coupling_loss = -P_transmitted_dB;
 
 # ==============================================================================
 # DISPLAY RESULTS
@@ -113,8 +131,8 @@ R_dB = 10*log10(R);
 
 for(i=1:n_gaps) {
     ?"Gap = " + num2str(gaps(i)*1e9) + " nm | " +
-      "Coupling Efficiency = " + num2str(coupling_efficiency(i)) + "% | " +
-      "Coupled Power = " + num2str(T_coupled_dB(i)) + " dB";
+      "Transmission = " + num2str(P_transmitted_dB(i)) + " dB | " +
+      "Loss = " + num2str(coupling_loss(i)) + " dB";
 }
 
 # ==============================================================
@@ -124,22 +142,27 @@ for(i=1:n_gaps) {
 ?"";
 ?"Generating plots...";
 
-# Plot 1: Coupling efficiency vs gap
-plot(gaps*1e9, coupling_efficiency, 
-     "Gap (nm)", "Coupling Efficiency (%)", 
-     "Coupling Efficiency vs Waveguide Gap");
+# Plot 1: Transmission vs gap
+plot(gaps*1e9, P_transmitted_dB, 
+     "Gap (nm)", "Transmission (dB)", 
+     "Transmission vs Waveguide Gap");
 
-# Plot 2: Transmission in dB
-plot(gaps*1e9, T_coupled_dB, T_same_dB, R_dB,
+# Plot 2: Transmission and reflection in dB
+plot(gaps*1e9, P_transmitted_dB, P_reflected_dB,
      "Gap (nm)", "Power (dB)", 
      "Power Distribution vs Gap");
-legend("Coupled (S41)", "Through (S21)", "Reflection (S11)");
+legend("Transmitted (S21)", "Reflected (S11)");
 
 # Plot 3: Linear power scale
-plot(gaps*1e9, T_coupled, T_same, R,
+plot(gaps*1e9, P_transmitted, P_reflected,
      "Gap (nm)", "Power (Linear)", 
      "Power Distribution vs Gap (Linear Scale)");
-legend("Coupled", "Through", "Reflection");
+legend("Transmitted", "Reflected");
+
+# Plot 4: Coupling loss
+plot(gaps*1e9, coupling_loss,
+     "Gap (nm)", "Coupling Loss (dB)",
+     "Coupling Loss vs Waveguide Gap");
 
 # ==============================================================
 # SAVE RESULTS TO FILE
@@ -149,12 +172,12 @@ legend("Coupled", "Through", "Reflection");
 ?"Saving results to file...";
 
 # Create results matrix
-results = [gaps'*1e9, coupling_efficiency', T_coupled_dB', T_same_dB', R_dB'];
+results = [gaps'*1e9, P_transmitted_dB', P_reflected_dB', coupling_loss'];
 
 # Save to file
 filename = "gap_sweep_results.txt";
 write(filename, 
-      "Gap(nm), CouplingEfficiency(%), Coupled(dB), Through(dB), Reflection(dB)" + endl +
+      "Gap(nm), Transmitted(dB), Reflected(dB), CouplingLoss(dB)" + endl +
       num2str(results));
 
 ?"Results saved to: " + filename;
@@ -163,19 +186,31 @@ write(filename,
 # FIND OPTIMAL GAP
 # ==============================================================
 
-# Find gap with maximum coupling efficiency
-max_coupling = max(coupling_efficiency);
-max_index = find(coupling_efficiency, max_coupling);
+# Find gap with maximum transmission (minimum loss)
+max_transmission = max(P_transmitted_dB);
+max_index = find(P_transmitted_dB, max_transmission);
 optimal_gap = gaps(max_index);
 
 ?"";
 ?"==============================================================";
 ?"OPTIMAL DESIGN POINT";
 ?"==============================================================";
-?"Maximum coupling efficiency: " + num2str(max_coupling) + "%";
+?"Maximum transmission: " + num2str(max_transmission) + " dB";
 ?"Optimal gap: " + num2str(optimal_gap*1e9) + " nm";
 ?"At this gap:";
-?"  - Coupled power: " + num2str(T_coupled_dB(max_index)) + " dB";
-?"  - Through power: " + num2str(T_same_dB(max_index)) + " dB";
-?"  - Reflection: " + num2str(R_dB(max_index)) + " dB";
+?"  - Transmitted power: " + num2str(P_transmitted_dB(max_index)) + " dB";
+?"  - Reflected power: " + num2str(P_reflected_dB(max_index)) + " dB";
+?"  - Coupling loss: " + num2str(coupling_loss(max_index)) + " dB";
 ?"==============================================================";
+
+# ==============================================================
+# RESTORE ORIGINAL GEOMETRY (OPTIONAL)
+# ==============================================================
+
+# Uncomment these lines if you want to restore the original gap
+# original_gap = 0.3e-6;  # Set to your original value
+# select("waveguide_1");
+# set("y", original_gap/2 + wg_width_y/2);
+# select("waveguide_2");
+# set("y", -(original_gap/2 + wg_width_y/2));
+# ?"Original geometry restored.";
