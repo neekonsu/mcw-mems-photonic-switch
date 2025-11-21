@@ -130,52 +130,48 @@ set("alpha", 0.2);  # Very transparent
 ?"==============================================================";
 
 # ==============================================================================
-# EME SOLVER SETUP
+# EME SOLVER SETUP (CORRECTED)
 # ==============================================================================
 
 ?"";
 ?"Setting up EME solver...";
 
-# EME region padding
-eme_padding_y = 3e-6;  # 3 um padding in y for evanescence
-eme_padding_z_bottom = 2e-6;  # 2 um padding below waveguides
-eme_padding_z_top = 3e-6;  # 3 um padding above waveguides
+# EME region specifications to match screenshot
+eme_x_min = -18e-6;  # -18 um
+eme_x_span = 36e-6;  # 36 um total span
 
-# Calculate EME region dimensions
-eme_x_span = wg_length_x;
-eme_x_center = 0;
-
-eme_y_span = 2*(wg_gap_y/2 + wg_width_y) + 2*eme_padding_y;
 eme_y_center = 0;
+eme_y_span = 6e-6;   # 6 um (from -3 to +3 um)
 
-eme_z_min = -eme_padding_z_bottom;
-eme_z_max = wg_height_z + eme_padding_z_top;
+eme_z_center = 0;
+eme_z_span = 1e-6;   # 1 um (from -0.5 to +0.5 um)
 
 # Add EME solver
 addeme;
 set("name", "EME");
-set("x", eme_x_center);
+set("x min", eme_x_min);
 set("x span", eme_x_span);
 set("y", eme_y_center);
 set("y span", eme_y_span);
-set("z min", eme_z_min);
-set("z max", eme_z_max);
+set("z", eme_z_center);
+set("z span", eme_z_span);
 
 # EME settings
 set("wavelength", 1.55e-6);  # 1550 nm
-set("number of cell groups", 1);  # Single uniform region for now
-set("group spans", 1, 1, wg_length_x);  # Group 1, span 1, length
-set("cells", 1, 1, 100);  # Group 1, span 1, 100 cells
-set("subcell method", 1, 0);  # Group 1, none (0=none, 1=CVCS, 2=SWG)
+set("number of cell groups", 1);
+set("group spans", 1, 1, eme_x_span);  # Group 1, span 1, length 36 um
+set("cells", 1, 1, 1);  # Group 1, span 1, 1 cell (will increase for sweeps)
+set("subcell method", 1, 0);  # Group 1, none
 
 # Mode settings
-set("number of modes for all cell groups", 4);  # Calculate 4 modes
-set("display cells", 1);  # Show cell structure
+set("number of modes for all cell groups", 10);  # Calculate 10 modes
+set("display cells", 0);  # Don't display cells initially
 
 ?"EME region dimensions:";
-?"  x: " + num2str(eme_x_span*1e6) + " um";
-?"  y: " + num2str(eme_y_span*1e6) + " um";
-?"  z: " + num2str((eme_z_max - eme_z_min)*1e6) + " um";
+?"  x min: " + num2str(eme_x_min*1e6) + " um";
+?"  x span: " + num2str(eme_x_span*1e6) + " um";
+?"  y: " + num2str(eme_y_center) + " um, span: " + num2str(eme_y_span*1e6) + " um";
+?"  z: " + num2str(eme_z_center) + " um, span: " + num2str(eme_z_span*1e6) + " um";
 
 # ==============================================================================
 # MESH REFINEMENT SETUP
@@ -188,6 +184,7 @@ set("display cells", 1);  # Show cell structure
 mesh1_padding = 1e-6;  # 1 um padding around waveguides
 
 # Calculate mesh region 1 to enclose both waveguides
+mesh1_x_span = wg_length_x;
 mesh1_y_span = 2*(wg_gap_y/2 + wg_width_y) + 2*mesh1_padding;
 mesh1_z_min = -mesh1_padding;
 mesh1_z_max = wg_height_z + mesh1_padding;
@@ -195,7 +192,7 @@ mesh1_z_max = wg_height_z + mesh1_padding;
 addmesh;
 set("name", "mesh_waveguides");
 set("x", 0);
-set("x span", wg_length_x);
+set("x span", mesh1_x_span);
 set("y", 0);
 set("y span", mesh1_y_span);
 set("z min", mesh1_z_min);
@@ -206,10 +203,12 @@ set("dz", 0.01e-6);  # 10 nm
 
 ?"Mesh region 1 (waveguides):";
 ?"  Mesh size: 0.01 um (10 nm)";
+?"  x span: " + num2str(mesh1_x_span*1e6) + " um";
 ?"  y span: " + num2str(mesh1_y_span*1e6) + " um";
-?"  z span: " + num2str((mesh1_z_max - mesh1_z_min)*1e6) + " um";
+?"  z: " + num2str(mesh1_z_min*1e6) + " to " + num2str(mesh1_z_max*1e6) + " um";
 
 # Mesh refinement 2: Gap region between waveguides (0.002 um = 2 nm)
+mesh2_x_span = wg_length_x;
 mesh2_y_span = wg_gap_y + 0.2e-6;  # Gap + small margin (0.1 um on each side)
 mesh2_z_min = -0.1e-6;  # Small padding below
 mesh2_z_max = wg_height_z + 0.1e-6;  # Small padding above
@@ -217,7 +216,7 @@ mesh2_z_max = wg_height_z + 0.1e-6;  # Small padding above
 addmesh;
 set("name", "mesh_gap");
 set("x", 0);
-set("x span", wg_length_x);
+set("x span", mesh2_x_span);
 set("y", 0);
 set("y span", mesh2_y_span);
 set("z min", mesh2_z_min);
@@ -225,14 +224,15 @@ set("z max", mesh2_z_max);
 set("dx", 0.002e-6);  # 2 nm
 set("dy", 0.002e-6);  # 2 nm
 set("dz", 0.002e-6);  # 2 nm
-set("override x mesh", 0);  # Don't override x (less critical for EME)
+set("override x mesh", 0);  # Don't override x
 set("override y mesh", 1);  # Override y mesh (critical for coupling)
 set("override z mesh", 1);  # Override z mesh (critical for mode)
 
 ?"Mesh region 2 (gap):";
 ?"  Mesh size: 0.002 um (2 nm)";
+?"  x span: " + num2str(mesh2_x_span*1e6) + " um";
 ?"  y span: " + num2str(mesh2_y_span*1e6) + " um";
-?"  z span: " + num2str((mesh2_z_max - mesh2_z_min)*1e6) + " um";
+?"  z: " + num2str(mesh2_z_min*1e6) + " to " + num2str(mesh2_z_max*1e6) + " um";
 
 # ==============================================================================
 # PORT SETUP
@@ -241,50 +241,35 @@ set("override z mesh", 1);  # Override z mesh (critical for mode)
 ?"";
 ?"Setting up ports...";
 
-# Port dimensions (slightly smaller than EME region to avoid boundary issues)
-port_y_span = eme_y_span * 0.95;
-port_z_min = eme_z_min;
-port_z_max = eme_z_max;
+# Port dimensions match EME region
+port_y_span = eme_y_span;
+port_z_span = eme_z_span;
 
-# Port 1 (Input, left side at x = -wg_length_x/2)
-port1_x = -wg_length_x/2;
-
+# Port 1 (Input, left side)
 select("EME");
 addemeport;
 set("name", "port_1");
 set("port location", "left");
-set("use full simulation span", 0);
-set("y", 0);
-set("y span", port_y_span);
-set("z min", port_z_min);
-set("z max", port_z_max);
-set("mode selection", "fundamental TE mode");  # Select fundamental mode
-set("number of trial modes", 20);  # Search through 20 modes
+set("use full simulation span", 1);  # Use full EME span
+set("mode selection", "fundamental TE mode");
+set("number of trial modes", 20);
 
 ?"Port 1 (left):";
-?"  Location: x = " + num2str(port1_x*1e6) + " um";
-?"  y span: " + num2str(port_y_span*1e6) + " um";
-?"  z span: " + num2str((port_z_max - port_z_min)*1e6) + " um";
+?"  Using full simulation span";
+?"  Mode selection: fundamental TE mode";
 
-# Port 2 (Output, right side at x = +wg_length_x/2)
-port2_x = wg_length_x/2;
-
+# Port 2 (Output, right side)
 select("EME");
 addemeport;
 set("name", "port_2");
 set("port location", "right");
-set("use full simulation span", 0);
-set("y", 0);
-set("y span", port_y_span);
-set("z min", port_z_min);
-set("z max", port_z_max);
+set("use full simulation span", 1);  # Use full EME span
 set("mode selection", "fundamental TE mode");
 set("number of trial modes", 20);
 
 ?"Port 2 (right):";
-?"  Location: x = " + num2str(port2_x*1e6) + " um";
-?"  y span: " + num2str(port_y_span*1e6) + " um";
-?"  z span: " + num2str((port_z_max - port_z_min)*1e6) + " um";
+?"  Using full simulation span";
+?"  Mode selection: fundamental TE mode";
 
 # ==============================================================================
 # FINAL SUMMARY
@@ -295,19 +280,20 @@ set("number of trial modes", 20);
 ?"EME SIMULATION SETUP COMPLETE";
 ?"==============================================================";
 ?"EME Solver:";
+?"  x: " + num2str(eme_x_min*1e6) + " to " + num2str((eme_x_min + eme_x_span)*1e6) + " um";
+?"  y: " + num2str(-eme_y_span/2*1e6) + " to " + num2str(eme_y_span/2*1e6) + " um";
+?"  z: " + num2str(-eme_z_span/2*1e6) + " to " + num2str(eme_z_span/2*1e6) + " um";
 ?"  Wavelength: 1.55 um";
-?"  Number of modes: 4";
-?"  Number of cells: 100";
-?"  Cell groups: 1";
+?"  Number of modes: 10";
+?"  Number of cells: 1 (increase for propagation)";
 ?"";
 ?"Mesh Refinement:";
 ?"  Region 1 (waveguides): 10 nm mesh";
 ?"  Region 2 (gap): 2 nm mesh";
 ?"";
 ?"Ports:";
-?"  Port 1: Left side (x = " + num2str(port1_x*1e6) + " um)";
-?"  Port 2: Right side (x = " + num2str(port2_x*1e6) + " um)";
+?"  Port 1: Left side";
+?"  Port 2: Right side";
 ?"";
 ?"Ready for EME analysis!";
-?"Run 'emepropagate' or 'emesweep' to solve.";
 ?"==============================================================";
