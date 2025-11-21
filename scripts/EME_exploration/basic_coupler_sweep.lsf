@@ -130,7 +130,7 @@ set("alpha", 0.2);  # Very transparent
 ?"==============================================================";
 
 # ==============================================================================
-# EME SOLVER SETUP (CORRECTED)
+# EME SOLVER SETUP (CORRECTED WITH PROPAGATION DIRECTION)
 # ==============================================================================
 
 ?"";
@@ -150,17 +150,22 @@ eme_z_span = 1e-6;   # 1 um (from -0.5 to +0.5 um)
 addeme;
 set("name", "EME");
 set("x min", eme_x_min);
-set("x span", eme_x_span);
+# DON'T set x span directly - it's controlled by cell groups!
 set("y", eme_y_center);
 set("y span", eme_y_span);
 set("z", eme_z_center);
 set("z span", eme_z_span);
 
+# Set propagation direction
+set("propagation direction", "x axis");  # Propagate along x
+
 # EME settings
 set("wavelength", 1.55e-6);  # 1550 nm
+
+# Define cell groups - this sets the x span
 set("number of cell groups", 1);
 set("group spans", 1, 1, eme_x_span);  # Group 1, span 1, length 36 um
-set("cells", 1, 1, 1);  # Group 1, span 1, 1 cell (will increase for sweeps)
+set("cells", 1, 1, 100);  # Group 1, span 1, 100 cells
 set("subcell method", 1, 0);  # Group 1, none
 
 # Mode settings
@@ -169,9 +174,10 @@ set("display cells", 0);  # Don't display cells initially
 
 ?"EME region dimensions:";
 ?"  x min: " + num2str(eme_x_min*1e6) + " um";
-?"  x span: " + num2str(eme_x_span*1e6) + " um";
+?"  x span: " + num2str(eme_x_span*1e6) + " um (set by cell groups)";
 ?"  y: " + num2str(eme_y_center) + " um, span: " + num2str(eme_y_span*1e6) + " um";
 ?"  z: " + num2str(eme_z_center) + " um, span: " + num2str(eme_z_span*1e6) + " um";
+?"  Propagation direction: x axis";
 
 # ==============================================================================
 # MESH REFINEMENT SETUP
@@ -241,10 +247,6 @@ set("override z mesh", 1);  # Override z mesh (critical for mode)
 ?"";
 ?"Setting up ports...";
 
-# Port dimensions match EME region
-port_y_span = eme_y_span;
-port_z_span = eme_z_span;
-
 # Port 1 (Input, left side)
 select("EME");
 addemeport;
@@ -280,12 +282,14 @@ set("number of trial modes", 20);
 ?"EME SIMULATION SETUP COMPLETE";
 ?"==============================================================";
 ?"EME Solver:";
+?"  Propagation direction: x axis";
 ?"  x: " + num2str(eme_x_min*1e6) + " to " + num2str((eme_x_min + eme_x_span)*1e6) + " um";
 ?"  y: " + num2str(-eme_y_span/2*1e6) + " to " + num2str(eme_y_span/2*1e6) + " um";
 ?"  z: " + num2str(-eme_z_span/2*1e6) + " to " + num2str(eme_z_span/2*1e6) + " um";
 ?"  Wavelength: 1.55 um";
 ?"  Number of modes: 10";
-?"  Number of cells: 1 (increase for propagation)";
+?"  Number of cells: 100";
+?"  Cell groups: 1";
 ?"";
 ?"Mesh Refinement:";
 ?"  Region 1 (waveguides): 10 nm mesh";
@@ -296,4 +300,5 @@ set("number of trial modes", 20);
 ?"  Port 2: Right side";
 ?"";
 ?"Ready for EME analysis!";
+?"Run 'emepropagate' to solve.";
 ?"==============================================================";
