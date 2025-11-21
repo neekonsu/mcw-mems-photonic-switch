@@ -1,0 +1,130 @@
+# ==============================================================================
+# DIRECTIONAL COUPLER GEOMETRY SETUP
+# ==============================================================================
+# This script creates a silicon substrate with two parallel waveguides
+
+# Clear any existing objects
+switchtolayout;
+selectall;
+delete;
+
+# ==============================================================================
+# DEFINE PARAMETERS
+# ==============================================================================
+
+# Substrate dimensions
+substrate_length_x = 50e-6;  # 50 um
+substrate_width_y = 8e-6;    # 8 um
+substrate_height_z = 6e-6;   # 6 um
+
+# Waveguide dimensions
+wg_length_x = 40e-6;         # 40 um
+wg_width_y = 0.44e-6;        # 0.44 um (440 nm)
+wg_height_z = 0.2e-6;        # 0.2 um (200 nm)
+wg_gap_y = 0.3e-6;           # 0.3 um gap between waveguides
+
+# Material properties
+material_substrate = "Si (Silicon) - Palik";
+material_waveguide = "Si (Silicon) - Palik";
+material_cladding = "SiO2 (Glass) - Palik";
+
+# ==============================================================================
+# CREATE SUBSTRATE
+# ==============================================================================
+
+?"Creating substrate...";
+
+addrect;
+set("name", "substrate");
+set("x", 0);
+set("x span", substrate_length_x);
+set("y", 0);
+set("y span", substrate_width_y);
+set("z min", -substrate_height_z);
+set("z max", 0);
+set("material", material_substrate);
+set("alpha", 0.3);  # Make semi-transparent for visualization
+
+# ==============================================================================
+# CREATE WAVEGUIDE 1 (Top waveguide, +y direction)
+# ==============================================================================
+
+?"Creating waveguide 1...";
+
+# Calculate position for waveguide 1
+wg1_y_position = wg_gap_y/2 + wg_width_y/2;
+
+addrect;
+set("name", "waveguide_1");
+set("x", 0);
+set("x span", wg_length_x);
+set("y", wg1_y_position);
+set("y span", wg_width_y);
+set("z min", 0);
+set("z max", wg_height_z);
+set("material", material_waveguide);
+
+# ==============================================================================
+# CREATE WAVEGUIDE 2 (Bottom waveguide, -y direction)
+# ==============================================================================
+
+?"Creating waveguide 2...";
+
+# Calculate position for waveguide 2
+wg2_y_position = -(wg_gap_y/2 + wg_width_y/2);
+
+addrect;
+set("name", "waveguide_2");
+set("x", 0);
+set("x span", wg_length_x);
+set("y", wg2_y_position);
+set("y span", wg_width_y);
+set("z min", 0);
+set("z max", wg_height_z);
+set("material", material_waveguide);
+
+# ==============================================================================
+# CREATE CLADDING (Optional - covers everything)
+# ==============================================================================
+
+?"Creating cladding...";
+
+cladding_height = 2e-6;  # 2 um above waveguides
+
+addrect;
+set("name", "cladding");
+set("x", 0);
+set("x span", substrate_length_x);
+set("y", 0);
+set("y span", substrate_width_y);
+set("z min", 0);
+set("z max", wg_height_z + cladding_height);
+set("material", material_cladding);
+set("override mesh order from material database", 1);
+set("mesh order", 3);  # Lower priority than waveguides
+set("alpha", 0.2);  # Very transparent
+
+# ==============================================================================
+# SUMMARY OUTPUT
+# ==============================================================================
+
+?"";
+?"==============================================================";
+?"GEOMETRY CREATION COMPLETE";
+?"==============================================================";
+?"Substrate:";
+?"  Length (x): " + num2str(substrate_length_x*1e6) + " um";
+?"  Width (y):  " + num2str(substrate_width_y*1e6) + " um";
+?"  Height (z): " + num2str(substrate_height_z*1e6) + " um";
+?"";
+?"Waveguides:";
+?"  Length (x): " + num2str(wg_length_x*1e6) + " um";
+?"  Width (y):  " + num2str(wg_width_y*1e6) + " um";
+?"  Height (z): " + num2str(wg_height_z*1e6) + " um";
+?"  Gap (y):    " + num2str(wg_gap_y*1e6) + " um";
+?"";
+?"Waveguide 1 center: y = " + num2str(wg1_y_position*1e6) + " um";
+?"Waveguide 2 center: y = " + num2str(wg2_y_position*1e6) + " um";
+?"";
+?"Edge-to-edge gap verification: " + num2str((abs(wg1_y_position - wg2_y_position) - wg_width_y)*1e6) + " um";
+?"==============================================================";
