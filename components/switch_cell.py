@@ -2,39 +2,39 @@ import gdsfactory as gf
 from gdsfactory import Component
 
 @gf.cell
-def create_mems_switch_unit():
+def main():
     """
-    Creates a complete unit cell of the 32x32 silicon photonic MEMS switch
-    with gap-adjustable directional couplers.
+    Creates a complete unit cell of the MCW photonic MEMS switch
+    with a narrow-wedge shuttle, bistable springs, and electrostatic actuation.
 
-    Reference dimensions (from paper):
-    - Unit cell: 166 μm pitch
-    - Directional coupler: 20 μm length, 450 nm width, 220 nm thick
-    - Initial gap: 550 nm (OFF state), can close to 135 nm (ON state)
-    - Comb drive: 88 μm × 88 μm footprint
-    - Comb fingers: 300 nm width, 400 nm spacing, 44 pairs
-    - Springs: 300 nm width, 30 μm length (4 folded springs)
-    - Switching voltage: 9.45V
+    Reference dimensions:
+    - Unit cell: 200 μm pitch
+    - Directional coupler: 100 μm length, 450 nm width, 220 nm thick
+    - Initial gap: 600 nm (OFF state), can close to 135 nm (ON state)
+    - Comb drive: 60 μm × 60 μm footprint
+    - Comb fingers: 300 nm width, 400 nm spacing
+    - Springs: 300 nm width, 30 μm length, 1um thickness
     """
 
     c = Component()
 
     # =========================================================================
-    # LAYER DEFINITIONS
+    # LAYER DEFINITIONS # TODO: determine expected dataype-to-layer mapping expected by PDK/downstream usage of GDS files.
     # =========================================================================
     LAYER_SI = (1, 0)           # Silicon device layer (220nm thick) - full etch
     LAYER_SI_PARTIAL = (2, 0)   # Shallow etch (70nm for gratings)
     LAYER_BOX = (10, 0)         # BOX layer (buried oxide / release etch)
+    LAYER_SACOX = (12, 0)       # BOX layer 2 (oxide on top of LAYER_SI)
+    LAYER_MEMS = (20, 0)        # Silicon MEMS layer (1um thick) - full etch
+    LAYER_MEMS_PARTIAL = (21, 0)    # Silicon MEMS layer (0.7um thick) - partial etch
     LAYER_METAL = (41, 0)       # Metal pads (Au/Cr)
-
-    # TODO Is there meaning tied to the layer numbers; should I look these up in some table to read more or are they arbitrary
 
     # =========================================================================
     # CELL PARAMETERS (measured design)
     # =========================================================================
-    cell_size = 180.0  # μm × 180 μm unit cell (repeatable in matrix)
+    cell_size = 200.0  # μm × 180 μm unit cell (repeatable in matrix) ~> larger than needed initially, to be shrunk in future iteration
 
-    # Port structure (2×2 switch cell):
+    # Optical Port structure (2×2 switch cell):
     # Inputs:  in1, drop1
     # Outputs: through1, drop2
 
@@ -42,34 +42,32 @@ def create_mems_switch_unit():
     # REFERENCE PARAMETERS (from paper - for reference only)
     # =========================================================================
     # WAVEGUIDE AND BEND parameters
-    wg_width = 0.45          # 450 nm TODO optimize in lumerical
-    wg_bend_radius = 5.0     # Typical for silicon photonics TODO optimize in lumerical
+    wg_width = 0.45          # 450 nm 
+    wg_bend_radius = 5.0     # Typical for silicon photonics 
+    # TODO: is this the wg width we concluded? Use EME+FDTD to confirm low-loss bend radius
 
     # DIRECTIONAL COUPLER parameters
-    coupler_length = 20.0    # μm TODO optimize in lumerical
-    initial_gap = 0.55       # 550 nm (OFF state) TODO optimize in lumerical
+    coupler_length = 100.0    # μm 
+    initial_gap = 0.55       # 550 nm (OFF state) 
 
-    # COMB DRIVE parameters TODO use an optimal comb drive based on literature, forward design only
-    comb_footprint = 88.0    # μm square TODO claude translated this from textual description, may not be a real design parameter; this is likely the footprint/realestate of the comb drive
-    comb_finger_width = 0.3  # 300 nm TODO optimize in lumerical
-    comb_finger_gap = 0.4    # 400 nm TODO optimize in lumerical
-    comb_finger_pitch = comb_finger_width + comb_finger_gap  # 700 nm TODO optimize in lumerical
-    num_finger_pairs = 44 # TODO optimize in lumerical
-    comb_finger_length = 20.0  # Estimated from footprint TODO optimize in lumerical
+    # COMB DRIVE parameters 
+    comb_finger_width = 0.3  # 300 nm 
+    comb_finger_gap = 0.4    # 400 nm 
+    comb_finger_pitch = comb_finger_width + comb_finger_gap  # 700 nm 
+    comb_finger_n = 70 # 49.7 um overall comb drive width ~> 70 * 0.7um = 49um + 0.7um (from offset of opposing combs)
+    comb_finger_length = 10.0 # TODO: find literature that details good CMOS comb drive design for numbers
 
-    # SPRING parameters
-    spring_width = 0.3       # 300 nm
-    spring_length = 30.0     # μm per segment
-    spring_turns = 4         # Number of turns in folded spring
-
-    # GRATING COUPLER parameters
-    # TODO use an optimal comb drive based on literature, forward design only
+    # SPRING parameters TODO: mostly optimize using design equations
+    spring_width = 0.3       # 300 nm ~> as thin as possible to maximize vertical stiffness, 3:10 aspect ratio assuming 1um MEMS layer
+    spring_length = 30.0     # μm per segment TODO: to be determined by design equations
 
     # =========================================================================
     # GEOMETRY DEFINITION
     # =========================================================================
 
-    # NOTE the center/origin is defined as the center of the 180um x 180um cell, so (90um,90um) is the top right and -(90um,90um) is the bottom left 
+    # NOTE the center/origin is defined as the center of the 200um x 200um cell, so (100um,100um) is the top right and -(100um,100um) is the bottom left 
+
+    # TODO STOP CODING HERE, DRAW IN OMNIGRAFFLE, DRAW CALLOUTS FOR ALL REFERENCE POINTS DEFINING THE DESIGN, THEN PROCEED TO CODE BASED ON THESE REFERENCE POINT DEFINITIONS
 
     # Waveguide crossing point: 50μm left and down from top-right corner
     # Cell centered at origin, so top-right is at (cell_size/2, cell_size/2) TODO remove old relative coordinate code
