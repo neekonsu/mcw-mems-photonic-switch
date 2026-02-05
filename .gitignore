@@ -16,6 +16,8 @@ env/
 
 # Conda
 .conda/
+./tower-tapeout-env/
+tower-tapeout-env/
 
 # Jupyter Notebook
 .ipynb_checkpoints/

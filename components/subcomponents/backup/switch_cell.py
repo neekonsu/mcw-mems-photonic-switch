@@ -1,6 +1,9 @@
 import gdsfactory as gf
 from gdsfactory import Component
 
+# Activate GDSFactory's generic PDK for referencing stock layout geometries
+gf.gpdk.PDK.activate()
+
 @gf.cell
 def main():
     """
@@ -382,10 +385,10 @@ def main():
 # Main execution block
 if __name__ == "__main__":
     # Create single unit cell
-    switch_unit = create_mems_switch_unit()
+    switch_unit = main()
 
     # Save to GDS
-    switch_unit.write_gds("mems_switch_unit.gds")
+    switch_unit.write_gds("./mems_switch_unit.gds")
 
     # Show in viewer
     switch_unit.show()
