@@ -52,8 +52,8 @@ class LAYER(LayerMap):
     OXIDE_LTO: Layer = (4, 0)      # Low-temperature oxide (~1 µm, CMP planarized)
     OXIDE_PSG: Layer = (5, 0)      # Phosphosilicate glass (~2 µm, sacrificial)
     POLY_ANCHOR: Layer = (6, 0)    # Undoped poly-Si anchor (~200 nm, deposited on SOI)
-    POLY_MEMS: Layer = (7, 0)      # Doped poly-Si structural MEMS (~500 nm, partially etched)
-    POLY_TOP: Layer = (8, 0)       # Doped poly-Si full-thickness (~500 nm, anchors/static)
+    POLY_MEMS: Layer = (7, 0)      # Doped poly-Si structural MEMS (~700 nm, partially etched)
+    POLY_TOP: Layer = (8, 0)       # Doped poly-Si full-thickness (~700 nm, anchors/static)
     METAL: Layer = (9, 0)          # Aluminium (~500 nm, lift-off)
     SI_SUBSTRATE: Layer = (10, 0)  # Silicon handle wafer (substrate)
 
@@ -143,7 +143,7 @@ DESIGN_RULES = DesignRules()
 #   LTO                 — ~1 µm (fills around Si features, CMP planarized)
 #   PSG                 — ~2 µm (sacrificial, removed during release)
 #   poly-Si anchor      — ~200 nm undoped (fills anchor etch holes, bonds to SOI)
-#   poly-Si structural  — ~500 nm doped (MEMS + top)
+#   poly-Si structural  — ~700 nm doped (MEMS + top)
 #   Metal               — 500 nm Al (on top of structural poly)
 
 
@@ -154,7 +154,7 @@ THICKNESS_SHALLOW_ETCH = 70 * nm   # 0.07 µm (partial etch depth)
 THICKNESS_LTO = 1.0                # ~1 µm (after CMP)
 THICKNESS_PSG = 2.0                # ~2 µm (sacrificial)
 THICKNESS_POLY_ANCHOR = 200 * nm   # 0.2 µm (undoped, hard-mask a-Si → poly)
-THICKNESS_POLY_MEMS = 500 * nm     # 0.5 µm (doped structural poly-Si)
+THICKNESS_POLY_MEMS = 700 * nm     # 0.7 µm (doped structural poly-Si)
 THICKNESS_METAL = 500 * nm         # 0.5 µm (Al, lift-off)
 THICKNESS_SUBSTRATE = 500.0        # ~500 µm handle wafer
 
@@ -278,7 +278,7 @@ def get_layer_stack(
                 mesh_order=2,
                 info={
                     "description": (
-                        "Doped poly-Si structural MEMS (~500 nm). "
+                        "Doped poly-Si structural MEMS (~700 nm). "
                         "Partially etched for moving structures and comb fingers."
                     ),
                     "doping": "n-type (PSG dopant source)",
@@ -292,7 +292,7 @@ def get_layer_stack(
                 mesh_order=2,
                 info={
                     "description": (
-                        "Doped poly-Si full thickness (~500 nm). "
+                        "Doped poly-Si full thickness (~700 nm). "
                         "Same deposition as POLY_MEMS but unetched — "
                         "used for anchors and non-moving structures."
                     ),
@@ -566,7 +566,7 @@ PROCESS_STEPS = [
     {"step": 8,   "name": "PSG etch",
      "description": "Etch PSG using hard mask to define sacrificial gap"},
     {"step": 9,   "name": "Hard mask removal + a-Si deposition",
-     "description": "Optional hard mask removal, then ~500 nm a-Si deposition"},
+     "description": "Optional hard mask removal, then ~700 nm a-Si deposition"},
     {"step": 10,  "name": "PSG deposition",
      "description": "Second PSG deposition (dopant source)"},
     {"step": 11,  "name": "Annealing",
