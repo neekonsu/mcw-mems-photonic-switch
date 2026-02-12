@@ -52,8 +52,8 @@ class LAYER(LayerMap):
     OXIDE_LTO: Layer = (4, 0)      # Low-temperature oxide (~1 µm, CMP planarized)
     OXIDE_PSG: Layer = (5, 0)      # Phosphosilicate glass (~2 µm, sacrificial)
     POLY_ANCHOR: Layer = (6, 0)    # Undoped poly-Si anchor (~200 nm, deposited on SOI)
-    POLY_MEMS: Layer = (7, 0)      # Doped poly-Si structural MEMS (~700 nm, partially etched)
-    POLY_TOP: Layer = (8, 0)       # Doped poly-Si full-thickness (~700 nm, anchors/static)
+    POLY_MEMS: Layer = (7, 0)      # Doped poly-Si structural MEMS (~500 nm, partially etched)
+    POLY_TOP: Layer = (8, 0)       # Doped poly-Si full-thickness (~500 nm, anchors/static)
     METAL: Layer = (9, 0)          # Aluminium (~500 nm, lift-off)
     SI_SUBSTRATE: Layer = (10, 0)  # Silicon handle wafer (substrate)
 
@@ -88,44 +88,87 @@ class LAYER(LayerMap):
 class DesignRules:
     """Design rules for the Optical MEMS process.
 
-    Attributes are grouped by rule type.  All values are in µm.
+    Attributes are grouped by rule type.  All values are in µm unless noted.
+    Rule IDs (W.xx, S.xx, etc.) reference the "Layer Specifications" tab of the
+    master spreadsheet (mcw-optical-mems-master-document.xlsx).
     """
 
-    # --- Minimum feature size (width) ---
-    min_width_si_full: float = 0.25
-    min_width_si_partial: float = 0.25
-    min_width_anchor: float = 0.3
-    min_width_psg: float = 0.3
-    min_width_metal: float = 1.0
+    # ---- MINIMUM WIDTH (same-layer) ----
+    min_width_si_full: float = 0.25        # W.01  Waveguide cores, photonic structures
+    min_width_si_partial: float = 0.25     # W.02  Rib waveguide slabs
+    min_width_anchor: float = 0.3          # W.03  Anchor trench width (step coverage)
+    min_width_psg: float = 0.3             # W.04  PSG etch openings
+    min_width_metal: float = 1.0           # W.05  Al lift-off (undercut needs wider features)
+    min_width_polysi: float = 0.5          # W.06  Comb fingers, flexures, MEMS beams
+    min_width_hard_mask: float = 0.5       # W.07  a-Si hard mask features (Mask #3)
+    min_width_release: float = 3.0         # W.08  Release region openings (HF access)
 
-    # --- Minimum gap (space) on same layer ---
-    min_gap_si_full: float = 0.25
-    min_gap_si_partial: float = 0.25
-    min_gap_anchor: float = 0.3
-    min_gap_psg: float = 0.3
-    min_gap_metal: float = 1.0
+    # ---- MAXIMUM WIDTH ----
+    max_width_psg: float = 0.8             # PSG hole max feature (from Layer Specs)
 
-    # --- Enclosure rules  (A encloses B by at least X) ---
-    enc_si_full_of_si_partial: float = 0.3    # Si full encloses Si partial
-    enc_si_full_of_anchor: float = 0.5        # Si full encloses anchor
-    enc_polysi_of_anchor: float = 0.4         # PolySi encloses anchor
-    enc_polysi_of_psg: float = 0.5            # PolySi encloses PSG
-    enc_polysi_of_metal: float = 0.5          # PolySi encloses metal
+    # ---- MINIMUM GAP / SPACE (same-layer) ----
+    min_gap_si_full: float = 0.25          # S.01  Directional coupler gaps, waveguide pitch
+    min_gap_si_partial: float = 0.25       # S.02
+    min_gap_anchor: float = 0.3            # S.03
+    min_gap_psg: float = 0.3              # S.04
+    min_gap_metal: float = 1.0             # S.05  Lift-off process limits pitch
+    min_gap_polysi: float = 0.3            # S.06  Comb finger gap (tentative)
+    min_gap_hard_mask: float = 0.3         # S.07  Same etch step as PSG
 
-    # --- Overlap / extension rules (A extends outside B by at least X) ---
-    ext_si_partial_outside_si_full: float = 0.2   # Si partial extends past Si full
-    ext_metal_outside_anchor: float = 0.5          # Metal extends past anchor
-    ext_metal_outside_polysi: float = 0.5          # Metal extends past PolySi
-    ext_polysi_outside_metal: float = 0.5          # PolySi extends past metal
+    # ---- ENCLOSURE (A encloses B by at least X) ----
+    enc_si_full_of_si_partial: float = 0.3    # E.01  Rib-to-strip transition margin
+    enc_si_full_of_anchor: float = 0.5        # E.02  Anchor must land on unetched SOI
+    enc_polysi_of_anchor: float = 0.4         # E.03  Poly shell seals anchor against HF
+    enc_polysi_of_psg: float = 0.5            # E.04  Oxide gap fully defined under poly
+    enc_polysi_of_metal: float = 0.5          # E.05  Metal must sit on poly, no overhang
+    enc_anchor_of_metal: float = 2.0          # E.06  Anchor encloses metal contact (tentative)
+    enc_hard_mask_of_psg_etch: float = 0.3    # E.07  Hard mask extends past PSG etch edges (tentative)
 
-    # --- Inter-layer gap rules (minimum distance between features on different layers) ---
-    gap_si_full_to_si_partial: float = 0.2
-    gap_anchor_to_psg: float = 1.0
-    gap_psg_to_anchor: float = 1.0
-    gap_anchor_to_polysi: float = 0.5
-    gap_polysi_to_anchor: float = 0.5
-    gap_metal_to_polysi: float = 0.5
-    gap_polysi_to_metal: float = 0.5
+    # ---- EXTENSION / OVERLAP (A extends outside B by at least X) ----
+    ext_si_partial_outside_si_full: float = 0.2   # X.01  Slab extends past rib core
+    ext_metal_outside_anchor: float = 0.5          # X.02  Metal pad overhangs anchor
+    ext_metal_outside_polysi: float = 0.5          # X.03
+    ext_polysi_outside_metal: float = 0.5          # X.04
+
+    # ---- INTER-LAYER GAP (min distance between features on different layers) ----
+    gap_si_full_to_si_partial: float = 0.2    # G.01  Avoid narrow slivers at etch boundary
+    gap_anchor_to_psg: float = 1.0            # G.02  Prevent etch interaction
+    gap_psg_to_anchor: float = 1.0            # G.02  (symmetric)
+    gap_anchor_to_polysi: float = 0.5         # G.03
+    gap_polysi_to_anchor: float = 0.5         # G.03  (symmetric)
+    gap_metal_to_polysi: float = 0.5          # G.04
+    gap_polysi_to_metal: float = 0.5          # G.04  (symmetric)
+    gap_si_full_to_anchor: float = 1.0        # G.05  Anchor trench away from waveguides (tentative)
+    gap_metal_to_anchor: float = 2.0          # G.06  Routing clearance to anchor perimeter
+    gap_release_to_anchor: float = 2.0        # G.07  HF undercut guard band (tentative)
+
+    # ---- MINIMUM AREA ----
+    min_area_si_full: float = 0.0625       # A.01  0.25² — prevent fragile slivers
+    min_area_anchor: float = 2.25          # A.02  1.5² — sufficient mechanical strength
+    min_area_metal_pad: float = 2500.0     # A.03  50² — wire-bond/probe pad landing area
+    min_area_polysi: float = 0.09          # A.04  0.3² — prevent free-floating debris
+
+    # ---- MEMS-SPECIFIC / STRUCTURAL RULES ----
+    max_unsupported_poly_span: float = 65.0         # M.01  Max free-standing beam (stiction risk)
+    release_hole_max_pitch: float = 10.0             # M.02  Max spacing for HF access
+    release_hole_min_diameter: float = 2.0           # M.03  Min hole for etchant flow
+    anchor_min_width_aspect_ratio: float = 3.0       # M.04  Trench depth; anchor W ≥ 2× this = 6 µm
+    comb_finger_max_aspect_ratio: float = 15.0       # M.05  Length/width limit (stiction/curling)
+    min_air_gap_released: float = 2.0                # M.06  Set by PSG thickness
+    spring_beam_min_width: float = 0.8               # M.07  k ∝ w³; ±10% width → ±33% k error
+    electrical_isolation_gap_polysi: float = 2.0     # M.08  Voltage hold-off between electrodes (tentative)
+
+    # ---- PHOTONIC-SPECIFIC RULES ----
+    min_bend_radius_strip: float = 5.0               # P.01  Strip waveguide min bend radius
+    min_bend_radius_rib: float = 5.0                 # P.02  Rib waveguide min bend radius
+    clearance_waveguide_to_polysi: float = 2.0       # P.03  Evanescent field isolation
+    clearance_waveguide_to_metal: float = 5.0        # P.04  Metal absorption loss (tentative)
+    coupler_gap_tolerance: float = 0.02              # P.05  CD control for coupler gaps
+
+    # ---- GEOMETRY INTEGRITY RULES ----
+    min_acute_angle_deg: float = 45.0                # I.01  Min angle (degrees), lithography limit
+    min_notch_width: float = 0.3                     # I.02  Min notch width (same as min gap)
+    grid_snap: float = 0.01                          # I.03  Manufacturing grid (µm)
 
 
 DESIGN_RULES = DesignRules()
@@ -143,7 +186,7 @@ DESIGN_RULES = DesignRules()
 #   LTO                 — ~1 µm (fills around Si features, CMP planarized)
 #   PSG                 — ~2 µm (sacrificial, removed during release)
 #   poly-Si anchor      — ~200 nm undoped (fills anchor etch holes, bonds to SOI)
-#   poly-Si structural  — ~700 nm doped (MEMS + top)
+#   poly-Si structural  — ~500 nm doped (MEMS + top)
 #   Metal               — 500 nm Al (on top of structural poly)
 
 
@@ -154,7 +197,7 @@ THICKNESS_SHALLOW_ETCH = 70 * nm   # 0.07 µm (partial etch depth)
 THICKNESS_LTO = 1.0                # ~1 µm (after CMP)
 THICKNESS_PSG = 2.0                # ~2 µm (sacrificial)
 THICKNESS_POLY_ANCHOR = 200 * nm   # 0.2 µm (undoped, hard-mask a-Si → poly)
-THICKNESS_POLY_MEMS = 700 * nm     # 0.7 µm (doped structural poly-Si)
+THICKNESS_POLY_MEMS = 500 * nm     # 0.5 µm (doped structural poly-Si)
 THICKNESS_METAL = 500 * nm         # 0.5 µm (Al, lift-off)
 THICKNESS_SUBSTRATE = 500.0        # ~500 µm handle wafer
 
@@ -278,7 +321,7 @@ def get_layer_stack(
                 mesh_order=2,
                 info={
                     "description": (
-                        "Doped poly-Si structural MEMS (~700 nm). "
+                        "Doped poly-Si structural MEMS (~500 nm). "
                         "Partially etched for moving structures and comb fingers."
                     ),
                     "doping": "n-type (PSG dopant source)",
@@ -292,7 +335,7 @@ def get_layer_stack(
                 mesh_order=2,
                 info={
                     "description": (
-                        "Doped poly-Si full thickness (~700 nm). "
+                        "Doped poly-Si full thickness (~500 nm). "
                         "Same deposition as POLY_MEMS but unetched — "
                         "used for anchors and non-moving structures."
                     ),
@@ -306,7 +349,7 @@ def get_layer_stack(
                 zmin=zmin_metal,
                 material="al",
                 mesh_order=1,
-                info={"description": "Aluminium (~500 nm, lift-off)"},
+                info={"description": "Aluminium (~500 nm Al, lift-off)"},
             ),
         )
     )
@@ -526,12 +569,26 @@ class OpticalMEMSConstants(gf.Constants):
     thickness_poly_mems: float = THICKNESS_POLY_MEMS
     thickness_metal: float = THICKNESS_METAL
 
-    # --- Design targets ---
+    # --- MEMS design targets ---
     target_footprint: float = 250.0  # µm (basic), 200 µm (higher)
     target_voltage_basic: float = 20.0  # V
     target_voltage_higher: float = 10.0  # V
     target_frequency_basic: float = 100e3  # Hz
     target_frequency_higher: float = 200e3  # Hz
+
+    # --- Optical design targets ---
+    target_er_off_basic: float = 20.0       # dB  extinction ratio OFF state (basic)
+    target_er_off_higher: float = 30.0      # dB  extinction ratio OFF state (higher)
+    target_er_thru_basic: float = 15.0      # dB  extinction ratio thru port (basic)
+    target_er_thru_higher: float = 20.0     # dB  extinction ratio thru port (higher)
+    target_il_basic: float = 0.5            # dB  insertion loss (basic)
+    target_il_higher: float = 0.2           # dB  insertion loss (higher)
+
+    # --- MEMS actuator nominal design (linear spring) ---
+    nominal_spring_width: float = 0.5       # µm
+    nominal_spring_length: float = 50.0     # µm
+    nominal_num_fingers: int = 80
+    nominal_finger_gap: float = 0.5         # µm
 
 
 # =============================================================================
@@ -544,42 +601,50 @@ PROCESS_STEPS = [
     {"step": 0,   "name": "Start with SOI",
      "description": "SOI wafer: 220 nm Si / 2 µm BOX / Si substrate"},
     {"step": 1,   "name": "Si partial etch",
-     "description": "70 nm shallow etch (Mask #1)", "mask": "MASK_SI_PARTIAL_ETCH"},
+     "description": "Si partial etch (70 nm depth, 150 nm slab remains)",
+     "mask": "MASK_SI_PARTIAL_ETCH"},
     {"step": 2,   "name": "Si full etch",
-     "description": "Full 220 nm Si etch (Mask #2)", "mask": "MASK_SI_FULL_ETCH"},
+     "description": "Si full etch (full 220 nm)", "mask": "MASK_SI_FULL_ETCH"},
     {"step": 3,   "name": "LTO deposition + CMP",
-     "description": "~1 µm LTO deposition, planarized by CMP"},
+     "description": "LTO deposition (~1 µm) and CMP"},
     {"step": 4,   "name": "PSG deposition",
-     "description": "~2 µm PSG sacrificial layer"},
+     "description": "PSG deposition (~2 µm)"},
     {"step": 5,   "name": "a-Si hard mask deposition",
-     "description": "~200 nm a-Si deposited as hard mask"},
+     "description": "a-Si deposition (hard mask, ~200 nm)",
+     "mask": "MASK_PSG_ETCH"},
     {"step": 6,   "name": "a-Si hard mask litho + etch",
-     "description": "Pattern hard mask (Mask #3)", "mask": "MASK_PSG_ETCH"},
+     "description": "a-Si (hard mask) litho and etch (Mask #3 patterns PSG etch regions)",
+     "mask": "MASK_PSG_ETCH"},
     {"step": 7.1, "name": "PR coating",
-     "description": "Photoresist coating for anchor etch"},
+     "description": "PR coating (over patterned hard mask)"},
     {"step": 7.2, "name": "PR litho",
-     "description": "Anchor etch lithography (Mask #4)", "mask": "MASK_ANCHOR_ETCH"},
+     "description": "PR litho (Mask #4 defines anchor openings)",
+     "mask": "MASK_ANCHOR_ETCH"},
     {"step": 7.3, "name": "Anchor etch",
-     "description": "Etch through PSG/LTO to SOI (anchor holes)"},
+     "description": "Anchor etch — etching the depth of LTO on PSG "
+                     "(~1 µm into PSG, stopping ~1 µm above SOI)"},
     {"step": 7.4, "name": "PR removal",
-     "description": "Strip photoresist"},
+     "description": "PR removal (hard mask remains)"},
     {"step": 8,   "name": "PSG etch",
-     "description": "Etch PSG using hard mask to define sacrificial gap"},
-    {"step": 9,   "name": "Hard mask removal + a-Si deposition",
-     "description": "Optional hard mask removal, then ~700 nm a-Si deposition"},
+     "description": "PSG etch via hard mask (~2 µm remaining PSG + 1 µm LTO, to SOI)"},
+    {"step": 9.1, "name": "Hard mask removal",
+     "description": "Hard mask removal (optional)"},
+    {"step": 9.2, "name": "a-Si deposition",
+     "description": "a-Si deposition (~500 nm, conformal LPCVD into anchor trenches)"},
     {"step": 10,  "name": "PSG deposition",
-     "description": "Second PSG deposition (dopant source)"},
+     "description": "PSG deposition (~2 µm, P+ dopant source for a-Si)"},
     {"step": 11,  "name": "Annealing",
-     "description": "Doping drive-in and a-Si → poly-Si crystallization"},
+     "description": "Annealing (~1050 °C, PSG doping drive-in + a-Si → poly-Si)"},
     {"step": 12,  "name": "Top PSG removal",
-     "description": "Remove top PSG after doping"},
+     "description": "Top PSG removal (strip dopant PSG, exposes poly-Si surface)"},
     {"step": 13,  "name": "poly-Si litho + etch",
-     "description": "Define MEMS structures (Mask #5)", "mask": "MASK_POLYSI_ETCH"},
+     "description": "poly-Si litho and etch (~500 nm partial etch, defines MEMS structures)",
+     "mask": "MASK_POLYSI_ETCH"},
     {"step": 14,  "name": "Metal lift-off",
-     "description": "500 nm Al deposition + lift-off (Mask #6)",
+     "description": "Metal lift-off (~500 nm Al on poly-Si pads) (tentative)",
      "mask": "MASK_METAL_LIFTOFF"},
     {"step": 15,  "name": "Release",
-     "description": "HF release of sacrificial PSG to free MEMS structures"},
+     "description": "Release (HF, removes sacrificial PSG/LTO, frees MEMS)"},
 ]
 
 

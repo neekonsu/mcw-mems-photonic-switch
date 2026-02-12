@@ -9,11 +9,15 @@ Silicon photonic MEMS switch tapeout targeting **Tower Semiconductor SiPho 0.18�
 ## Environment Setup
 
 ```bash
-# Conda environment (Python 3.11, defined in environment.yml)
-conda activate tower-tapeout
+# Local conda environment prefix at switch-env/ (Python 3.11, gitignored)
+# Activate using the prefix path:
+conda activate ./switch-env
+
+# Or run commands directly via the prefix Python:
+./switch-env/bin/python <script>
 
 # Key dependencies: gdsfactory>=7.0.0, klayout>=0.28.0, numpy, scipy, matplotlib, shapely
-# Local conda env directory: switch-env/ (gitignored)
+# environment.yml defines the env spec (name: tower-tapeout)
 ```
 
 ## Common Commands
@@ -61,7 +65,7 @@ layouts/
 ├── mems.gds                                   # Generated MEMS layout (git-lfs tracked)
 └── reference-layouts/                         # Reference GDS files from Han et al. and MCW lab
 docs/
-└── Layer names for Optical MEMS.xlsx          # Process layer documentation spreadsheet
+└── mcw-optical-mems-master-document.xlsx      # Master document (layers, fab process, design rules, targets)
 ```
 
 ## Architecture
@@ -81,7 +85,7 @@ from mcw_custom_optical_mems_pdk import LAYER, LAYER_STACK, PDK, DESIGN_RULES
 
 Key exports:
 - **`LAYER`** (LayerMap): Structure layers (1-10)/0, mask layers (11-16)/0, dummy layers (21-23)/0
-- **`DESIGN_RULES`**: Minimum widths, gaps, enclosure/extension rules (all in μm)
+- **`DESIGN_RULES`**: Widths, gaps, enclosures, extensions, areas, MEMS structural, photonic, and geometry integrity rules (all in μm)
 - **`LAYER_STACK`**: Physical cross-section with Z-reference at SOI surface (0 μm)
 - **`PDK`**: GDSFactory Pdk object combining all definitions
 - **`activate()`**: Activates PDK and returns `LAYER_ALIASES` dict for backward compatibility
@@ -124,8 +128,33 @@ Components use multi-layer construction: structural poly-Si (POLY_MEMS) for geom
 - **SOI**: 220 nm Si on 2 μm BOX
 - **Poly-Si structural**: 500 nm doped, on top of 2 μm PSG sacrificial gap
 - **6-mask process**: Si partial etch, Si full etch, PSG etch, anchor etch, poly-Si etch, metal lift-off
-- **16 fabrication steps** documented in `PROCESS_STEPS` list in PDK file
+- **17 fabrication steps** documented in `PROCESS_STEPS` list in PDK file (step 9 split into 9.1 hard mask removal + 9.2 a-Si deposition)
 - **Target displacement**: 550 nm (comb-drive gap tuning for directional coupler switching)
+
+### Design Targets (from master spreadsheet)
+
+| Parameter | Basic | Higher |
+|-----------|-------|--------|
+| Frequency | 100 kHz | 200 kHz |
+| Voltage | 20 V | 10 V |
+| ER (OFF state) | 20 dB | 30 dB |
+| ER (thru port) | 15 dB | 20 dB |
+| Insertion loss | 0.5 dB | 0.2 dB |
+| Footprint | 250 μm | 200 μm |
+
+### Design Rules Summary
+
+The `DESIGN_RULES` object contains ~50 rules organized by category. Rule IDs reference the "Layer Specifications" tab of `docs/mcw-optical-mems-master-document.xlsx`:
+
+- **W.01–W.08**: Minimum widths (Si, anchor, PSG, metal, poly-Si, hard mask, release)
+- **S.01–S.07**: Minimum gaps/spaces
+- **E.01–E.07**: Enclosure rules (A encloses B)
+- **X.01–X.04**: Extension/overlap rules
+- **G.01–G.07**: Inter-layer gap rules
+- **A.01–A.04**: Minimum area rules
+- **M.01–M.08**: MEMS structural rules (max span, release holes, anchor aspect ratio, comb AR, spring width, isolation gap)
+- **P.01–P.05**: Photonic rules (bend radii, waveguide-to-MEMS/metal clearance, coupler tolerance)
+- **I.01–I.03**: Geometry integrity (min angle, notch width, grid snap)
 
 ### Git LFS
 
