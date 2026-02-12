@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description>MCW Optical MEMS PDK 2.5D Stack</description>
+ <version/>
+ <category>d25</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <priority>0</priority>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>d25_scripts</group-name>
+ <menu-path>tools_menu.d25.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>d25-dsl-xml</dsl-interpreter-name>
+ <text>
+# MCW Optical MEMS PDK — 2.5D Layer Stack
+#
+# Z-reference: top of SOI silicon = 0 um
+#
+# Physical stack (bottom to top):
+#   Si substrate   -7.0  .. -2.0   (truncated to 5 um for visualization)
+#   BOX (SiO2)     -2.0  ..  0.0
+#   SOI Si full     0.0  ..  0.22
+#   SOI Si partial  0.0  ..  0.15  (after 70 nm shallow etch)
+#   LTO (SiO2)      0.22 ..  1.22
+#   PSG (SiO2)      1.22 ..  3.22  (sacrificial, removed during release)
+#   Poly anchor     0.22 ..  0.42  (fills anchor etch holes)
+#   Poly MEMS       3.22 ..  3.72  (structural, moving parts)
+#   Poly top        3.22 ..  3.72  (structural, anchors/static)
+#   Metal (Al)      3.72 ..  4.22
+
+# Substrate (truncated to 5 um)
+z(input(10, 0), -7.0 .. -2.0, color: 0x999999, name: "SI_SUBSTRATE")
+
+# Buried oxide (BOX)
+z(input(3, 0), -2.0 .. 0.0, color: 0xf3ff80, name: "OXIDE_SOI")
+
+# SOI silicon — full thickness (220 nm)
+z(input(1, 0), 0.0 .. 0.22, color: 0x4444cc, name: "SI_FULL")
+
+# SOI silicon — partial etch (150 nm slab)
+z(input(2, 0), 0.0 .. 0.15, color: 0x8888ff, name: "SI_PARTIAL")
+
+# LTO fill oxide (1 um, CMP planarized)
+z(input(4, 0), 0.22 .. 1.22, color: 0xE9DD8A, name: "OXIDE_LTO")
+
+# PSG sacrificial oxide (2 um)
+z(input(5, 0), 1.22 .. 3.22, color: 0x439093, name: "OXIDE_PSG")
+
+# Poly-Si anchor (200 nm, undoped, fills anchor etch holes)
+z(input(6, 0), 0.22 .. 0.42, color: 0xF09B93, name: "POLY_ANCHOR")
+
+# Poly-Si structural MEMS (500 nm, doped, moving parts)
+z(input(7, 0), 3.22 .. 3.72, color: 0xEBD6D7, name: "POLY_MEMS")
+
+# Poly-Si top (500 nm, doped, anchors/static, same z as MEMS)
+z(input(8, 0), 3.22 .. 3.72, color: 0xF9EBD9, name: "POLY_TOP")
+
+# Metal — aluminium (500 nm, lift-off)
+z(input(9, 0), 3.72 .. 4.22, color: 0x01ff6b, name: "METAL")</text>
+</klayout-macro>
