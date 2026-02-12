@@ -1,7 +1,7 @@
 # Conda
 .conda/
-./tower-tapeout-env/
-tower-tapeout-env/
+./switch-env/
+switch-env/
 
 # IDEs
 .vscode/
