@@ -1,7 +1,0 @@
-CELL HIERARCHY
-============================================================
-
-Cell: create_mems_switch_unit
-  Cell index: 0
-  Bounding box: 250.283 x 250.106 µm
-
