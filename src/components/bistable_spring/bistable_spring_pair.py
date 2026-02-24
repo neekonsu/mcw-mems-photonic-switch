@@ -53,8 +53,8 @@ make_mems_anchor = _anchor_mod.make_mems_anchor
 def make_bistable_spring_pair(
     span: float = 40.0,
     flex_ratio: float = 0.3,
-    flex_width: float = 0.8,
-    rigid_width: float = 1.5,
+    flex_width: float = 0.5,
+    rigid_width: float = 0.9375,
     initial_offset: float = 1.2,
     taper_length: float = 2.0,
     beam_spacing: float = 5.0,
@@ -85,7 +85,7 @@ def make_bistable_spring_pair(
     Args:
         span:              Total beam span per side, anchor to shuttle edge (um).
         flex_ratio:        Fraction of span for flexible cosine section.
-        flex_width:        Width of flex section (um).  >= 0.8 (M.07).
+        flex_width:        Width of flex section (um).  Default 0.5.
         rigid_width:       Width of rigid section (um).
         initial_offset:    CCS y-offset at shuttle end (um).  Bistability
                            requires initial_offset / thickness > 2.31;

@@ -109,55 +109,73 @@ def _compute_ccs_centerline(span, flex_ratio, initial_offset, n_points=400):
 def _compute_ccs_half_centerline(half_span, flex_ratio, initial_offset, n_points=200):
     """Compute a CCS half-beam centerline y(x) from anchor to shuttle end.
 
-    Profile consists of two sections (left-to-right):
-      1. Flexible  – cosine rise from y=0 to y=A
-      2. Rigid     – straight line from y=A to y=initial_offset
+    Profile consists of three sections (left-to-right):
+      1. Anchor flex   – cosine rise from y=0 (horizontal) to y=A
+      2. Rigid         – straight line from y=A to y=initial_offset-A
+      3. Shuttle flex  – cosine rise from y=initial_offset-A to
+                         y=initial_offset (horizontal)
 
-    The beam starts at x=0 (anchor end, y=0) and ends at x=half_span
-    (shuttle end, y=initial_offset).
+    Both endpoints approach horizontally (dy/dx = 0), so the shuttle
+    attachment is analogous to the anchor attachment.  C1 continuity is
+    enforced at every section boundary.
+
+    The cosine amplitude A is determined by the C1 condition at both
+    flex-rigid junctions:
+        slope = A * pi / (2 * L_flex)
+        slope = (initial_offset - 2*A) / L_rigid
+        => A = initial_offset / (2 + pi * L_rigid / (2 * L_flex))
 
     Args:
         half_span:      Half-beam span, anchor to shuttle edge (um).
-        flex_ratio:     Fraction of half_span for the flexible section.
+        flex_ratio:     Fraction of half_span for EACH flexible section.
+                        Must be < 0.5 so a rigid section exists.
         initial_offset: y-offset at shuttle end (um).
         n_points:       Total number of sample points.
 
     Returns:
         (x, y) as numpy arrays.
     """
-    L_flex = flex_ratio * half_span
-    L_rigid = half_span - L_flex
+    L_flex = flex_ratio * half_span           # flex section length (each end)
+    L_rigid = half_span - 2.0 * L_flex        # rigid section in the middle
 
-    # Cosine amplitude from C1 continuity (same derivation as full beam)
-    A = initial_offset / (1.0 + np.pi * L_rigid / (2.0 * L_flex))
+    # Cosine amplitude from C1 continuity at both flex-rigid junctions
+    A = initial_offset / (2.0 + np.pi * L_rigid / (2.0 * L_flex))
     slope = A * np.pi / (2.0 * L_flex)
 
-    n_sec = max(n_points // 2, 30)
+    n_sec = max(n_points // 3, 30)
 
-    # --- Section 1: flexible (cosine rise from 0 to A) ---
+    # --- Section 1: anchor flex (cosine rise from y=0 to y=A) ---
     x1 = np.linspace(0, L_flex, n_sec, endpoint=False)
     y1 = A * (1.0 - np.cos(np.pi * x1 / (2.0 * L_flex)))
 
-    # --- Section 2: rigid (straight from A to initial_offset) ---
-    x2 = np.linspace(L_flex, half_span, n_sec, endpoint=True)
+    # --- Section 2: rigid (straight from y=A to y=initial_offset-A) ---
+    x2 = np.linspace(L_flex, half_span - L_flex, n_sec, endpoint=False)
     y2 = A + slope * (x2 - L_flex)
 
-    return np.concatenate([x1, x2]), np.concatenate([y1, y2])
+    # --- Section 3: shuttle flex (cosine rise to y=initial_offset) ---
+    # Mirror of anchor flex: approaches y=initial_offset horizontally
+    x3 = np.linspace(half_span - L_flex, half_span, n_sec, endpoint=True)
+    y3 = initial_offset - A * (1.0 - np.cos(
+        np.pi * (half_span - x3) / (2.0 * L_flex)
+    ))
+
+    return np.concatenate([x1, x2, x3]), np.concatenate([y1, y2, y3])
 
 
 def _compute_half_width_profile(x, half_span, flex_ratio, flex_width,
                                 rigid_width, taper_length):
-    """Compute beam width for a half-beam with one taper transition.
+    """Compute beam width for a half-beam with tapers at both ends.
 
-    The beam is thin (flex_width) in the flexible section and wide
-    (rigid_width) in the rigid section, with a single cosine taper
-    at the junction.
+    The beam is thin (flex_width) in both flexible sections (anchor and
+    shuttle ends) and wide (rigid_width) in the central rigid section.
+    Cosine-interpolated tapers at each flex-rigid junction avoid strain
+    concentration.
 
     Args:
         x:            Array of x-coordinates.
         half_span:    Half-beam span (um).
-        flex_ratio:   Fraction of half_span for flex section.
-        flex_width:   Width in flexible section (um).
+        flex_ratio:   Fraction of half_span for EACH flex section.
+        flex_width:   Width in flexible sections (um).
         rigid_width:  Width in rigid section (um).
         taper_length: Taper transition length (um).
 
@@ -167,21 +185,37 @@ def _compute_half_width_profile(x, half_span, flex_ratio, flex_width,
     L_flex = flex_ratio * half_span
     w = np.full_like(x, rigid_width)
 
-    # Taper zone boundaries (centered on flex-rigid junction)
-    t_start = L_flex - taper_length / 2.0
-    t_end = L_flex + taper_length / 2.0
+    # Anchor taper zone (centered on anchor flex-rigid junction at x=L_flex)
+    at_start = L_flex - taper_length / 2.0
+    at_end = L_flex + taper_length / 2.0
 
-    # Flexible region
-    mask = x <= t_start
+    # Shuttle taper zone (centered on rigid-shuttle flex junction)
+    st_start = half_span - L_flex - taper_length / 2.0
+    st_end = half_span - L_flex + taper_length / 2.0
+
+    # Anchor flex region
+    mask = x <= at_start
     w[mask] = flex_width
 
-    # Taper (flex -> rigid)
-    mask = (x > t_start) & (x < t_end)
+    # Anchor taper (flex -> rigid)
+    mask = (x > at_start) & (x < at_end)
     if np.any(mask):
-        t = (x[mask] - t_start) / taper_length
+        t = (x[mask] - at_start) / taper_length
         w[mask] = flex_width + (rigid_width - flex_width) * 0.5 * (
             1.0 - np.cos(np.pi * t)
         )
+
+    # Shuttle taper (rigid -> flex)
+    mask = (x > st_start) & (x < st_end)
+    if np.any(mask):
+        t = (x[mask] - st_start) / taper_length
+        w[mask] = rigid_width + (flex_width - rigid_width) * 0.5 * (
+            1.0 - np.cos(np.pi * t)
+        )
+
+    # Shuttle flex region
+    mask = x >= st_end
+    w[mask] = flex_width
 
     return w
 
@@ -250,8 +284,8 @@ def _compute_width_profile(x, span, flex_ratio, flex_width, rigid_width,
 def make_ccs_half_beam(
     half_span: float = 20.0,
     flex_ratio: float = 0.3,
-    flex_width: float = 0.8,
-    rigid_width: float = 1.5,
+    flex_width: float = 0.5,
+    rigid_width: float = 0.9375,
     initial_offset: float = 1.2,
     taper_length: float = 2.0,
     thickness: float = 0.5,
@@ -261,8 +295,17 @@ def make_ccs_half_beam(
     """Single CCS half-beam (anchor end to shuttle end).
 
     The half-beam spans from (0, 0) at the anchor to (half_span, initial_offset)
-    at the shuttle connection.  It contains one flex section (cosine) and one
-    rigid section (straight), with a cosine-interpolated taper between them.
+    at the shuttle connection.  Both endpoints approach horizontally (dy/dx = 0),
+    so the shuttle attachment is geometrically analogous to the anchor attachment.
+
+    Beam structure (left to right):
+        Anchor (y=0, horizontal)
+          -> cosine flex (flex_width wide)
+          -> taper
+          -> straight rigid (rigid_width wide)
+          -> taper
+          -> cosine flex (flex_width wide)
+        Shuttle (y=initial_offset, horizontal)
 
     This is the building block for the split-center bistable spring pair,
     where four half-beams connect two outer anchors to a central shuttle gap.
@@ -272,9 +315,10 @@ def make_ccs_half_beam(
 
     Args:
         half_span:      Beam span, anchor to shuttle edge (um).  Default 20.
-        flex_ratio:     Fraction of half_span for flexible section.  Default 0.3.
-        flex_width:     Width of flexible cosine section (um).  Default 0.8.
-        rigid_width:    Width of rigid straight section (um).  Default 1.5.
+        flex_ratio:     Fraction of half_span for EACH flexible section.
+                        Must be < 0.5.  Default 0.3.
+        flex_width:     Width of flexible cosine section (um).  Default 0.5.
+        rigid_width:    Width of rigid straight section (um).  Default 0.9375.
         initial_offset: y-offset at shuttle end (um).  Default 1.2.
         taper_length:   Flex-to-rigid width taper length (um).  Default 2.0.
         thickness:      Structural layer thickness (um).  Default 0.5 (POLY_MEMS).
@@ -305,8 +349,8 @@ def make_ccs_half_beam(
 def make_ccs_beam(
     span: float = 40.0,
     flex_ratio: float = 0.3,
-    flex_width: float = 0.8,
-    rigid_width: float = 1.5,
+    flex_width: float = 0.5,
+    rigid_width: float = 0.9375,
     initial_offset: float = 1.2,
     taper_length: float = 2.0,
     thickness: float = 0.5,
@@ -332,8 +376,8 @@ def make_ccs_beam(
     Args:
         span:           Beam span, anchor to anchor (um).  Default 40.
         flex_ratio:     Fraction of span for flexible sections.  Default 0.3.
-        flex_width:     Width of flexible cosine beams (um).  Default 0.8.
-        rigid_width:    Width of rigid straight beams (um).  Default 1.5.
+        flex_width:     Width of flexible cosine beams (um).  Default 0.5.
+        rigid_width:    Width of rigid straight beams (um).  Default 0.9375.
         initial_offset: Max y-offset at beam center (um).  Default 1.2.
         taper_length:   Flex-to-rigid width taper length (um).  Default 2.0.
         thickness:      Structural layer thickness (um).  Default 0.5 (POLY_MEMS).
@@ -365,8 +409,8 @@ def make_ccs_beam(
 def make_ccs_beam_set(
     span: float = 40.0,
     flex_ratio: float = 0.3,
-    flex_width: float = 0.8,
-    rigid_width: float = 1.5,
+    flex_width: float = 0.5,
+    rigid_width: float = 0.9375,
     initial_offset: float = 1.2,
     taper_length: float = 2.0,
     thickness: float = 0.5,
@@ -399,8 +443,8 @@ def make_ccs_beam_set(
     Args:
         span:           Beam span, anchor to anchor (um).  Default 40.
         flex_ratio:     Fraction of span for flexible sections.  Default 0.3.
-        flex_width:     Flexible beam width (um).  Default 0.8.
-        rigid_width:    Rigid beam width (um).  Default 1.5.
+        flex_width:     Flexible beam width (um).  Default 0.5.
+        rigid_width:    Rigid beam width (um).  Default 0.9375.
         initial_offset: Max y-offset at beam center (um).  Default 1.2.
         taper_length:   Width taper length (um).  Default 2.0.
         thickness:      Structural layer thickness (um).  Default 0.5 (POLY_MEMS).

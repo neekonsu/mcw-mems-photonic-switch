@@ -71,8 +71,8 @@ def make_switch_cell_bistable_padless(
     # Bistable spring parameters (scaled)
     spring_span: float = 40.0 * S,
     spring_flex_ratio: float = 0.3,
-    spring_flex_width: float = 0.8,
-    spring_rigid_width: float = 1.5,
+    spring_flex_width: float = 0.5,
+    spring_rigid_width: float = 0.9375,
     spring_initial_offset: float = 1.2,
     spring_taper_length: float = 2.0,
     spring_beam_spacing: float = 5.0 * S,
