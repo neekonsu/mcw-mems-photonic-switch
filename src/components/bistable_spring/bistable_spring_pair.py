@@ -51,7 +51,7 @@ make_mems_anchor = _anchor_mod.make_mems_anchor
 
 @gf.cell
 def make_bistable_spring_pair(
-    span: float = 40.0,
+    span: float = 36.5,
     flex_ratio: float = 0.3,
     flex_width: float = 0.5,
     rigid_width: float = 0.9375,
