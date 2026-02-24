@@ -15,21 +15,19 @@ pure cosine beam of the same span and offset).
 Beam layout (as-fabricated, viewed from above):
 
     Anchor ── Flex (cosine) ── Taper ── Rigid (straight) ── Rod ── ...
-    (fixed)   0.1 um wide              0.4 um wide         (shuttle)
+    (fixed)   flex_width wide          rigid_width wide     (shuttle)
               3/10 of span             7/10 of span
 
 The beam is symmetric about its center:
     Anchor ─ Flex ─ Rigid ─ Rod ─ Rigid ─ Flex ─ Anchor
 
-Key dimensions from the paper (fabricated on 220 nm SOI, 2 um BOX):
-  - Total span (anchor-to-anchor, excl. rod): 40 um
-  - Flexible cosine beam width:  0.1 um
-  - Rigid straight beam width:   0.4 um
-  - Flex : rigid length ratio:   3 : 7
-  - Initial max y-offset:        0.2 um
-  - Post-release displacement between stable states: ~1.2 um
-  - SOI residual compressive pre-strain: ~4.1e-4
-  - Switching energy per set: 64 fJ (to 2nd) / 58 fJ (to 1st)
+Default parameters are scaled for the 500 nm POLY_MEMS structural layer
+(Tower 0.18 um SiPho process).  For the original 220 nm SOI values from
+the paper, pass flex_width=0.1, rigid_width=0.4, initial_offset=0.2,
+taper_length=1.0, layer=LAYER.SI_FULL.
+
+Bistability condition:  Q = initial_offset / thickness > 2.31
+    Default: Q = 1.2 / 0.5 = 2.4  (satisfies bistability)
 """
 
 import numpy as np
@@ -108,6 +106,86 @@ def _compute_ccs_centerline(span, flex_ratio, initial_offset, n_points=400):
     return np.concatenate([x1, x2, x3, x4]), np.concatenate([y1, y2, y3, y4])
 
 
+def _compute_ccs_half_centerline(half_span, flex_ratio, initial_offset, n_points=200):
+    """Compute a CCS half-beam centerline y(x) from anchor to shuttle end.
+
+    Profile consists of two sections (left-to-right):
+      1. Flexible  – cosine rise from y=0 to y=A
+      2. Rigid     – straight line from y=A to y=initial_offset
+
+    The beam starts at x=0 (anchor end, y=0) and ends at x=half_span
+    (shuttle end, y=initial_offset).
+
+    Args:
+        half_span:      Half-beam span, anchor to shuttle edge (um).
+        flex_ratio:     Fraction of half_span for the flexible section.
+        initial_offset: y-offset at shuttle end (um).
+        n_points:       Total number of sample points.
+
+    Returns:
+        (x, y) as numpy arrays.
+    """
+    L_flex = flex_ratio * half_span
+    L_rigid = half_span - L_flex
+
+    # Cosine amplitude from C1 continuity (same derivation as full beam)
+    A = initial_offset / (1.0 + np.pi * L_rigid / (2.0 * L_flex))
+    slope = A * np.pi / (2.0 * L_flex)
+
+    n_sec = max(n_points // 2, 30)
+
+    # --- Section 1: flexible (cosine rise from 0 to A) ---
+    x1 = np.linspace(0, L_flex, n_sec, endpoint=False)
+    y1 = A * (1.0 - np.cos(np.pi * x1 / (2.0 * L_flex)))
+
+    # --- Section 2: rigid (straight from A to initial_offset) ---
+    x2 = np.linspace(L_flex, half_span, n_sec, endpoint=True)
+    y2 = A + slope * (x2 - L_flex)
+
+    return np.concatenate([x1, x2]), np.concatenate([y1, y2])
+
+
+def _compute_half_width_profile(x, half_span, flex_ratio, flex_width,
+                                rigid_width, taper_length):
+    """Compute beam width for a half-beam with one taper transition.
+
+    The beam is thin (flex_width) in the flexible section and wide
+    (rigid_width) in the rigid section, with a single cosine taper
+    at the junction.
+
+    Args:
+        x:            Array of x-coordinates.
+        half_span:    Half-beam span (um).
+        flex_ratio:   Fraction of half_span for flex section.
+        flex_width:   Width in flexible section (um).
+        rigid_width:  Width in rigid section (um).
+        taper_length: Taper transition length (um).
+
+    Returns:
+        Array of widths, same shape as x.
+    """
+    L_flex = flex_ratio * half_span
+    w = np.full_like(x, rigid_width)
+
+    # Taper zone boundaries (centered on flex-rigid junction)
+    t_start = L_flex - taper_length / 2.0
+    t_end = L_flex + taper_length / 2.0
+
+    # Flexible region
+    mask = x <= t_start
+    w[mask] = flex_width
+
+    # Taper (flex -> rigid)
+    mask = (x > t_start) & (x < t_end)
+    if np.any(mask):
+        t = (x[mask] - t_start) / taper_length
+        w[mask] = flex_width + (rigid_width - flex_width) * 0.5 * (
+            1.0 - np.cos(np.pi * t)
+        )
+
+    return w
+
+
 def _compute_width_profile(x, span, flex_ratio, flex_width, rigid_width,
                            taper_length):
     """Compute beam width at each x with cosine-interpolated tapers.
@@ -169,15 +247,71 @@ def _compute_width_profile(x, span, flex_ratio, flex_width, rigid_width,
 # ---------------------------------------------------------------------------
 
 @gf.cell
+def make_ccs_half_beam(
+    half_span: float = 20.0,
+    flex_ratio: float = 0.3,
+    flex_width: float = 0.8,
+    rigid_width: float = 1.5,
+    initial_offset: float = 1.2,
+    taper_length: float = 2.0,
+    thickness: float = 0.5,
+    n_points: int = 200,
+    layer=LAYER.POLY_MEMS,
+) -> gf.Component:
+    """Single CCS half-beam (anchor end to shuttle end).
+
+    The half-beam spans from (0, 0) at the anchor to (half_span, initial_offset)
+    at the shuttle connection.  It contains one flex section (cosine) and one
+    rigid section (straight), with a cosine-interpolated taper between them.
+
+    This is the building block for the split-center bistable spring pair,
+    where four half-beams connect two outer anchors to a central shuttle gap.
+
+    Bistability condition:  Q = initial_offset / thickness > 2.31
+        Default: Q = 1.2 / 0.5 = 2.4  (satisfies bistability)
+
+    Args:
+        half_span:      Beam span, anchor to shuttle edge (um).  Default 20.
+        flex_ratio:     Fraction of half_span for flexible section.  Default 0.3.
+        flex_width:     Width of flexible cosine section (um).  Default 0.8.
+        rigid_width:    Width of rigid straight section (um).  Default 1.5.
+        initial_offset: y-offset at shuttle end (um).  Default 1.2.
+        taper_length:   Flex-to-rigid width taper length (um).  Default 2.0.
+        thickness:      Structural layer thickness (um).  Default 0.5 (POLY_MEMS).
+                        Used for documentation; adjust initial_offset to maintain
+                        Q = initial_offset / thickness > 2.31 for bistability.
+        n_points:       Polygon discretization resolution.  Default 200.
+        layer:          GDS layer tuple.  Default POLY_MEMS (7,0).
+    """
+    c = gf.Component()
+
+    x_c, y_c = _compute_ccs_half_centerline(
+        half_span, flex_ratio, initial_offset, n_points
+    )
+    w = _compute_half_width_profile(
+        x_c, half_span, flex_ratio, flex_width, rigid_width, taper_length
+    )
+
+    # Build closed polygon: upper edge (left-to-right), lower edge (reversed)
+    upper = np.column_stack([x_c, y_c + w / 2.0])
+    lower = np.column_stack([x_c[::-1], (y_c - w / 2.0)[::-1]])
+    points = np.vstack([upper, lower])
+
+    c.add_polygon(points, layer=layer)
+    return c
+
+
+@gf.cell
 def make_ccs_beam(
     span: float = 40.0,
     flex_ratio: float = 0.3,
-    flex_width: float = 0.1,
-    rigid_width: float = 0.4,
-    initial_offset: float = 0.2,
-    taper_length: float = 1.0,
+    flex_width: float = 0.8,
+    rigid_width: float = 1.5,
+    initial_offset: float = 1.2,
+    taper_length: float = 2.0,
+    thickness: float = 0.5,
     n_points: int = 400,
-    layer=LAYER.SI_FULL,
+    layer=LAYER.POLY_MEMS,
 ) -> gf.Component:
     """Single CCS bistable beam (as-fabricated mask shape).
 
@@ -186,27 +320,27 @@ def make_ccs_beam(
     maximum offset at x = span/2.
 
     Beam structure (left to right):
-        Anchor -> cosine flex (0.1 um wide, 12 um long)
+        Anchor -> cosine flex (flex_width wide)
                -> taper
-               -> straight rigid (0.4 um wide, 28 um long)
-               -> [center: max offset = 0.2 um]
+               -> straight rigid (rigid_width wide)
+               -> [center: max offset = initial_offset]
                -> straight rigid -> taper -> cosine flex -> Anchor
 
-    After HF vapor release the residual compressive stress in the SOI
-    layer (~4.1e-4 pre-strain) causes the beam to buckle to its first
-    stable state with ~0.6 um additional offset.  A second stable state
-    exists at ~-0.6 um from the as-fabricated position (total travel
-    ~1.2 um between states).
+    Bistability condition:  Q = initial_offset / thickness > 2.31
+        Default: Q = 1.2 / 0.5 = 2.4  (satisfies bistability)
 
     Args:
         span:           Beam span, anchor to anchor (um).  Default 40.
         flex_ratio:     Fraction of span for flexible sections.  Default 0.3.
-        flex_width:     Width of flexible cosine beams (um).  Default 0.1.
-        rigid_width:    Width of rigid straight beams (um).  Default 0.4.
-        initial_offset: Max y-offset at beam center (um).  Default 0.2.
-        taper_length:   Flex-to-rigid width taper length (um).  Default 1.0.
+        flex_width:     Width of flexible cosine beams (um).  Default 0.8.
+        rigid_width:    Width of rigid straight beams (um).  Default 1.5.
+        initial_offset: Max y-offset at beam center (um).  Default 1.2.
+        taper_length:   Flex-to-rigid width taper length (um).  Default 2.0.
+        thickness:      Structural layer thickness (um).  Default 0.5 (POLY_MEMS).
+                        Used for documentation; adjust initial_offset to maintain
+                        Q = initial_offset / thickness > 2.31 for bistability.
         n_points:       Polygon discretization resolution.  Default 400.
-        layer:          GDS layer tuple.  Default SI_FULL (1,0).
+        layer:          GDS layer tuple.  Default POLY_MEMS (7,0).
     """
     c = gf.Component()
 
@@ -231,16 +365,17 @@ def make_ccs_beam(
 def make_ccs_beam_set(
     span: float = 40.0,
     flex_ratio: float = 0.3,
-    flex_width: float = 0.1,
-    rigid_width: float = 0.4,
-    initial_offset: float = 0.2,
-    taper_length: float = 1.0,
+    flex_width: float = 0.8,
+    rigid_width: float = 1.5,
+    initial_offset: float = 1.2,
+    taper_length: float = 2.0,
+    thickness: float = 0.5,
     beam_spacing: float = 6.0,
-    rod_width: float = 0.4,
-    anchor_width: float = 2.0,
-    anchor_length: float = 3.0,
+    rod_width: float = 1.5,
+    anchor_width: float = 6.0,
+    anchor_length: float = 6.0,
     n_points: int = 400,
-    layer=LAYER.SI_FULL,
+    layer=LAYER.POLY_MEMS,
 ) -> gf.Component:
     """Parallel pair of CCS bistable beams with anchors and central rod.
 
@@ -253,31 +388,28 @@ def make_ccs_beam_set(
     The full switch uses two sets (one on each side of the shuttle),
     driven by a bidirectional electrostatic comb actuator.
 
-    In the first stable state (ON state, post-release), both beams
-    buckle further in +y, pushing the shuttle upward toward the fixed
-    waveguide of the horizontal adiabatic coupler (HAC).  Applying
-    voltage to the lower comb pulls the shuttle in -y, snapping the
-    beams into their second stable state (OFF state).
-
     Coordinate system:
       x: along beam span; x=0 at left anchors, x=span at right anchors
       y: perpendicular to beams; y=0 midway between the beam pair
       Beams curve in +y; first stable state displaces shuttle in +y
 
+    Bistability condition:  Q = initial_offset / thickness > 2.31
+        Default: Q = 1.2 / 0.5 = 2.4  (satisfies bistability)
+
     Args:
         span:           Beam span, anchor to anchor (um).  Default 40.
         flex_ratio:     Fraction of span for flexible sections.  Default 0.3.
-        flex_width:     Flexible beam width (um).  Default 0.1.
-        rigid_width:    Rigid beam width (um).  Default 0.4.
-        initial_offset: Max y-offset at beam center (um).  Default 0.2.
-        taper_length:   Width taper length (um).  Default 1.0.
-        beam_spacing:   Center-to-center distance between beams (um).
-                        Default 6.
-        rod_width:      Width of the connecting rod (um).  Default 0.4.
-        anchor_width:   Anchor pad width (um).  Default 2.
-        anchor_length:  Anchor pad length (um).  Default 3.
+        flex_width:     Flexible beam width (um).  Default 0.8.
+        rigid_width:    Rigid beam width (um).  Default 1.5.
+        initial_offset: Max y-offset at beam center (um).  Default 1.2.
+        taper_length:   Width taper length (um).  Default 2.0.
+        thickness:      Structural layer thickness (um).  Default 0.5 (POLY_MEMS).
+        beam_spacing:   Center-to-center distance between beams (um).  Default 6.
+        rod_width:      Width of the connecting rod (um).  Default 1.5.
+        anchor_width:   Anchor pad width (um).  Default 6.
+        anchor_length:  Anchor pad length (um).  Default 6.
         n_points:       Polygon resolution.  Default 400.
-        layer:          GDS layer tuple.  Default SI_FULL (1,0).
+        layer:          GDS layer tuple.  Default POLY_MEMS (7,0).
     """
     c = gf.Component()
     half_sp = beam_spacing / 2.0
@@ -289,6 +421,7 @@ def make_ccs_beam_set(
         rigid_width=rigid_width,
         initial_offset=initial_offset,
         taper_length=taper_length,
+        thickness=thickness,
         n_points=n_points,
         layer=layer,
     )
@@ -314,8 +447,6 @@ def make_ccs_beam_set(
     rod_ref.dmove((span / 2.0 - rod_width / 2.0, rod_bottom))
 
     # --- Anchor pads (4 total, one per beam endpoint) ---
-    # Anchors remain bonded to the BOX layer after HF release because
-    # they are wide enough (>= 2 um) to resist undercut.
     anchor = gf.components.rectangle(
         size=(anchor_length, anchor_width), layer=layer
     )
@@ -339,6 +470,12 @@ if __name__ == "__main__":
 
     PDK.activate()
 
-    # Generate the full beam set and display
+    # Generate individual components for inspection
+    half = make_ccs_half_beam()
+    half.show()
+
+    beam = make_ccs_beam()
+    beam.show()
+
     beam_set = make_ccs_beam_set()
     beam_set.show()
