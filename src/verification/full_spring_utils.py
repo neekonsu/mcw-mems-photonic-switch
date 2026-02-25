@@ -42,6 +42,8 @@ DEFAULT_FULL_SPRING_PARAMS = dict(
     rigid_width=0.9375,
     initial_offset=1.2,
     taper_length=2.0,
+    fillet_radius=0.0,
+    junction_widening=0.0,
 )
 
 
@@ -81,6 +83,8 @@ def get_full_spring_polygon(
     initial_offset=1.2,
     taper_length=2.0,
     n_points=400,
+    fillet_radius=0.0,
+    junction_widening=0.0,
 ):
     """Return Nx2 closed polygon of the complete spring (merged outline).
 
@@ -96,6 +100,14 @@ def get_full_spring_polygon(
       - Upper beams at y = +beam_spacing/2
       - Lower beams at y = -beam_spacing/2
       - Beams curve in +y direction
+
+    Args:
+        fillet_radius: Radius for rounding concave (interior) corners (um).
+            Applied as buffer(-r).buffer(+r) to erode sharp inside corners.
+            0.1 um is safe vs 0.5 um minimum beam width.
+        junction_widening: Extra half-width at beam-shuttle attachment (um).
+            Adds triangular gussets that taper from this width at the shuttle
+            face back to zero over ~2 um along the beam.
 
     Returns:
         Nx2 numpy array of exterior polygon coordinates (closed).
@@ -141,8 +153,44 @@ def get_full_spring_polygon(
     ])
     polys.append(shuttle_rect)
 
+    # Junction widening: triangular gussets at beam-shuttle attachment points
+    if junction_widening > 0:
+        gusset_taper = 2.0  # taper length along beam (um)
+        # Beam center y-coordinates at shuttle face
+        beam_ys = [
+            initial_offset + half_sp,   # upper beam
+            initial_offset - half_sp,   # lower beam
+        ]
+        for beam_y in beam_ys:
+            # Left shuttle face (x = sx0): gusset extends into left beams
+            polys.append(Polygon([
+                (sx0, beam_y - junction_widening),
+                (sx0, beam_y + junction_widening),
+                (sx0 - gusset_taper, beam_y),
+            ]))
+            # Right shuttle face (x = sx1): gusset extends into right beams
+            polys.append(Polygon([
+                (sx1, beam_y - junction_widening),
+                (sx1, beam_y + junction_widening),
+                (sx1 + gusset_taper, beam_y),
+            ]))
+
     # Merge all into single outline
     merged = unary_union(polys)
+
+    # Fillet: erode then dilate to round concave (interior) corners.
+    # Cap radius so it never exceeds the minimum beam half-width,
+    # otherwise thin flex regions are eroded away entirely.
+    if fillet_radius > 0:
+        max_safe = flex_width / 2.0 - 0.02
+        r = min(fillet_radius, max_safe)
+        if r > 0:
+            merged = merged.buffer(-r, join_style='mitre')
+            merged = merged.buffer(+r, join_style='mitre')
+
+    # Safety: if erosion still splits geometry, keep largest piece
+    if merged.geom_type == 'MultiPolygon':
+        merged = max(merged.geoms, key=lambda g: g.area)
 
     # Extract exterior coordinates
     coords = np.array(merged.exterior.coords)
@@ -154,7 +202,9 @@ def get_full_spring_polygon(
 # ---------------------------------------------------------------------------
 
 def identify_bc_nodes_2d(nodes, anchor_distance=80.0, half_span=36.5,
-                         shuttle_length=7.0, tol=0.05):
+                         shuttle_length=7.0, tol=0.05,
+                         beam_spacing=10.0, initial_offset=1.2,
+                         flex_width=0.5):
     """Identify boundary condition node sets for 2D full spring mesh.
 
     Args:
@@ -163,14 +213,20 @@ def identify_bc_nodes_2d(nodes, anchor_distance=80.0, half_span=36.5,
         half_span: Half-beam span (um).
         shuttle_length: Shuttle x-extent (um).
         tol: Position tolerance (um).
+        beam_spacing: Vertical spacing between upper/lower beams (um).
+        initial_offset: Beam center y-offset (um).
+        flex_width: Beam width in flex region (um).
 
     Returns:
         Dict with keys:
           'left_anchor':  node indices at x < tol
           'right_anchor': node indices at x > anchor_distance - tol
           'shuttle':      node indices in shuttle region
+          'junction':     node indices at beam-shuttle attachment points
+                          (shuttle vertical edges within beam y-range)
     """
     x = nodes[:, 0] if nodes.ndim == 2 else nodes[0]
+    y = nodes[:, 1] if nodes.ndim == 2 else nodes[1]
 
     left = np.where(x < tol)[0]
     right = np.where(x > anchor_distance - tol)[0]
@@ -178,11 +234,78 @@ def identify_bc_nodes_2d(nodes, anchor_distance=80.0, half_span=36.5,
     # Shuttle region: half_span < x < half_span + shuttle_length
     shuttle = np.where((x > half_span - tol) & (x < half_span + shuttle_length + tol))[0]
 
+    # Junction nodes: at shuttle vertical edges AND within beam y-range
+    half_sp = beam_spacing / 2.0
+    beam_center_ys = [initial_offset + half_sp, initial_offset - half_sp]
+    y_margin = flex_width / 2.0 + 0.1  # small margin beyond beam half-width
+
+    at_left_edge = np.abs(x - half_span) < tol
+    at_right_edge = np.abs(x - (half_span + shuttle_length)) < tol
+    at_shuttle_edge = at_left_edge | at_right_edge
+
+    in_beam_y = np.zeros(len(nodes), dtype=bool)
+    for yc in beam_center_ys:
+        in_beam_y |= np.abs(y - yc) < y_margin
+
+    junction = np.where(at_shuttle_edge & in_beam_y)[0]
+
     return {
         'left_anchor': left,
         'right_anchor': right,
         'shuttle': shuttle,
+        'junction': junction,
     }
+
+
+# ---------------------------------------------------------------------------
+# Post-processing: physical range detection
+# ---------------------------------------------------------------------------
+
+def find_physical_xlim(disp, F, margin_frac=0.05):
+    """Auto-detect x-limits for force-displacement plots.
+
+    Starts at the force minimum (peak of the restoring-force well) and
+    walks outward to find zero-crossings on each side.  These correspond
+    to the two stable equilibria of the bistable beam.
+
+    Robust to edge outliers from pre-stress (negative displacement) and
+    post-second-well (large displacement) regions.
+
+    Args:
+        disp: displacement array (positive = downward from initial).
+        F: force array (same length as disp).
+        margin_frac: fraction of detected range to add as margin.
+
+    Returns:
+        (x_min, x_max) tuple suitable for ax.set_xlim().
+    """
+    n = len(disp)
+
+    # Find force minimum in the interior (exclude edge 10% on each side)
+    # to avoid picking up edge stiffening as the "force well"
+    trim = max(n // 10, 1)
+    if n > 2 * trim:
+        i_peak = int(np.argmin(F[trim:n - trim])) + trim
+    else:
+        i_peak = int(np.argmin(F))
+
+    # Left bound: walk left from peak to first zero crossing
+    x_left = disp[0]
+    for i in range(i_peak, 0, -1):
+        if F[i] * F[i - 1] < 0:
+            frac = abs(F[i - 1]) / (abs(F[i - 1]) + abs(F[i]))
+            x_left = disp[i - 1] + (disp[i] - disp[i - 1]) * frac
+            break
+
+    # Right bound: last zero crossing walking right from peak
+    x_right = disp[-1]
+    for i in range(i_peak, n - 1):
+        if F[i] * F[i + 1] < 0:
+            frac = abs(F[i]) / (abs(F[i]) + abs(F[i + 1]))
+            x_right = disp[i] + (disp[i + 1] - disp[i]) * frac
+
+    span = max(x_right - x_left, 0.1)
+    return x_left - margin_frac * span, x_right + margin_frac * span
 
 
 def identify_bc_nodes_3d(points, anchor_distance=80.0, half_span=36.5,
