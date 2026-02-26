@@ -22,7 +22,9 @@ import math
 import os
 import sys
 
+import numpy as np
 import gdsfactory as gf
+from shapely.geometry import Polygon, box as shapely_box
 
 _comp_dir = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../libraries"))
@@ -44,12 +46,16 @@ _bistable_spring = _import_from(
 )
 _comb_drive = _import_from("comb_drive/comb_drive.py", "_bsw_comb_drive")
 _anchor = _import_from("anchor/anchor.py", "_bsw_anchor")
+_full_spring_utils = _import_from(
+    "../verification/full_spring_utils.py", "_bsw_full_spring_utils"
+)
 
 make_proofmass = _shuttle_beam.make_proofmass
 make_bistable_spring_pair = _bistable_spring.make_bistable_spring_pair
 make_comb_drive = _comb_drive.make_comb_drive
 make_comb_drive_cut = _comb_drive.make_comb_drive_cut
 make_mems_anchor = _anchor.make_mems_anchor
+get_full_spring_polygon = _full_spring_utils.get_full_spring_polygon
 
 
 @gf.cell
@@ -503,6 +509,244 @@ def make_switch_mems_cut_bistable(
         comb_left.dmirror_x()
         comb_left.dmovex(-proof_length / 2)
         comb_left.dmovey(-proof_height / 2 + comb_edge_lower_array[ii])
+
+    return switch
+
+
+def make_verified_spring_no_shuttle(
+    anchor_distance: float = 100.0,
+    flex_ratio: float = 0.20,
+    beam_spacing: float = 10.0,
+    shuttle_length: float = 7.0,
+    shuttle_height: float = 12.0,
+    flex_width: float = 0.5,
+    rigid_width: float = 1.50,
+    initial_offset: float = 1.50,
+    taper_length: float = 2.0,
+    fillet_radius: float = 0.3,
+    junction_widening: float = 0.7,
+    anchor_pad_length: float = 4.0,
+    anchor_pad_height: float = 8.0,
+    n_points: int = 600,
+    layer=LAYER.POLY_MEMS,
+) -> gf.Component:
+    """FEM-verified bistable spring with the shuttle rectangle removed.
+
+    Uses get_full_spring_polygon() from the 4aa verification notebook to
+    produce the exact fused beam geometry (fillets + junction gussets),
+    then subtracts the solid shuttle rectangle and centers at origin.
+
+    After centering the shuttle center is at (0, 0):
+      - Beams extend from x = +/-shuttle_length/2 to x = +/-anchor_distance/2
+      - Upper beams near y = +beam_spacing/2
+      - Lower beams near y = -beam_spacing/2
+      - Anchor pads on POLY_ANCHOR + SI_FULL at the clamped ends
+    """
+    tag = (f"ad{anchor_distance:.0f}"
+           f"_h{initial_offset:.2f}"
+           f"_fr{flex_ratio:.2f}"
+           f"_rw{rigid_width:.2f}"
+           f"_fw{flex_width:.2f}"
+           f"_bs{beam_spacing:.0f}"
+           f"_sl{shuttle_length:.0f}")
+    c = gf.Component(name=f"verified_spring_ns_{tag}")
+
+    # Generate full spring polygon (beams + shuttle merged)
+    poly = get_full_spring_polygon(
+        anchor_distance=anchor_distance,
+        beam_spacing=beam_spacing,
+        shuttle_length=shuttle_length,
+        shuttle_height=shuttle_height,
+        flex_ratio=flex_ratio,
+        flex_width=flex_width,
+        rigid_width=rigid_width,
+        initial_offset=initial_offset,
+        taper_length=taper_length,
+        n_points=n_points,
+        fillet_radius=fillet_radius,
+        junction_widening=junction_widening,
+    )
+    if np.allclose(poly[0], poly[-1]):
+        poly = poly[:-1]
+
+    # Subtract the shuttle rectangle
+    half_span = (anchor_distance - shuttle_length) / 2.0
+    sx0 = half_span
+    sx1 = half_span + shuttle_length
+    sy_center = initial_offset
+    sy_half = shuttle_height / 2.0
+
+    spring_shape = Polygon(poly)
+    shuttle_rect = shapely_box(sx0, sy_center - sy_half, sx1, sy_center + sy_half)
+    beams_only = spring_shape.difference(shuttle_rect)
+
+    # Center at origin: shuttle center → (0, 0)
+    x_shift = -anchor_distance / 2.0
+    y_shift = -initial_offset
+
+    # Add beam polygons on POLY_MEMS
+    geoms = (beams_only.geoms if beams_only.geom_type == 'MultiPolygon'
+             else [beams_only])
+    for geom in geoms:
+        coords = np.array(geom.exterior.coords)
+        if np.allclose(coords[0], coords[-1]):
+            coords = coords[:-1]
+        coords = coords.copy()
+        coords[:, 0] += x_shift
+        coords[:, 1] += y_shift
+        c.add_polygon(coords, layer=layer)
+
+    # Anchor pads on POLY_ANCHOR + SI_FULL
+    # At the anchor ends (x=0 / x=anchor_distance), beams are at
+    # y = ±beam_spacing/2 - initial_offset (after centering).
+    # Pads span that range plus anchor_pad_height margin.
+    half_sp = beam_spacing / 2.0
+    pad_y_lo = -half_sp - initial_offset - anchor_pad_height / 2.0
+    pad_y_hi = half_sp - initial_offset + anchor_pad_height / 2.0
+
+    left_x = -anchor_distance / 2.0
+    right_x = anchor_distance / 2.0
+
+    for anchor_layer in [LAYER.POLY_ANCHOR, LAYER.SI_FULL]:
+        c.add_polygon([
+            (left_x - anchor_pad_length, pad_y_lo),
+            (left_x, pad_y_lo),
+            (left_x, pad_y_hi),
+            (left_x - anchor_pad_length, pad_y_hi),
+        ], layer=anchor_layer)
+        c.add_polygon([
+            (right_x, pad_y_lo),
+            (right_x + anchor_pad_length, pad_y_lo),
+            (right_x + anchor_pad_length, pad_y_hi),
+            (right_x, pad_y_hi),
+        ], layer=anchor_layer)
+
+    return c
+
+
+def make_switch_mems_verified_bistable(
+    # Proof mass
+    proof_length: float = 7.0,
+    proof_height: float = 120.0,
+    proof_height_extension: float = 10.0,
+    hole_diameter: float = 5.0,
+    hole_gap: float = 0.8,
+    # Verified spring parameters
+    spring_anchor_distance: float = 100.0,
+    spring_flex_ratio: float = 0.20,
+    spring_beam_spacing: float = 10.0,
+    spring_shuttle_height: float = 12.0,
+    spring_flex_width: float = 0.5,
+    spring_rigid_width: float = 1.50,
+    spring_initial_offset: float = 1.50,
+    spring_taper_length: float = 2.0,
+    spring_fillet_radius: float = 0.3,
+    spring_junction_widening: float = 0.7,
+    spring_anchor_pad_length: float = 4.0,
+    spring_anchor_pad_height: float = 8.0,
+    spring_n_points: int = 600,
+    # Comb drive parameters
+    finger_length: float = 5.0,
+    finger_width: float = 0.5,
+    finger_gap: float = 0.5,
+    finger_distance: float = 3.0,
+    num_pair: int = 20,
+    edge_fixed: float = 1.0,
+    holder_distance: float = 0.0,
+    holder_linewidth: float = 0.8,
+    holder_width_move: float = 3.0,
+    holder_width_fixed: float = 20.0,
+    holder_gap_min: float = 2.0,
+    holder_top_over: float = 0.3,
+    holder_bottom_over: float = 0.3,
+    # Positioning
+    comb_edge_lower: float = 5.0,
+    layer=LAYER.POLY_MEMS,
+) -> gf.Component:
+    """Switch cell with FEM-verified bistable springs from the 4aa notebook.
+
+    Uses get_full_spring_polygon() to produce the exact spring geometry
+    validated by FEM, with the shuttle rectangle subtracted (the proof mass
+    replaces it). Both top and bottom springs have the same orientation.
+
+    The proof mass is extended by proof_height_extension on each end so the
+    bistable springs are clear of the comb drives.
+
+    Args:
+        proof_height_extension: Extra height added to top and bottom of
+            proof mass (um) to clear springs from comb drives.
+        spring_*: Parameters for the verified bistable spring geometry.
+        (other args same as make_switch_mems_bistable)
+    """
+    # Extend proof mass
+    extended_height = proof_height + 2 * proof_height_extension
+
+    # Snap proof mass dimensions to hole grid
+    p_r = hole_diameter + hole_gap
+    proof_length = int((proof_length - hole_gap) / p_r) * p_r + hole_gap
+    extended_height = int((extended_height - hole_gap) / p_r) * p_r + hole_gap
+
+    # Auto-compute holder_distance
+    if holder_distance == 0:
+        L = num_pair * 2 * (finger_width + finger_gap) + finger_width + 2 * edge_fixed
+        W = holder_width_move - holder_linewidth
+        N = math.ceil(L / W)
+        holder_distance = N * W - L
+
+    tag = (f"ad{spring_anchor_distance:.0f}"
+           f"_h{spring_initial_offset:.2f}"
+           f"_fr{spring_flex_ratio:.2f}"
+           f"_rw{spring_rigid_width:.2f}")
+    switch = gf.Component(name=f"switch_verified_bistable_{tag}")
+
+    # Proof mass (extended height)
+    pm = make_proofmass(proof_length, extended_height, hole_diameter, hole_gap, layer)
+    switch.add_ref(pm)
+
+    # Verified spring (beams only, shuttle removed)
+    spring = make_verified_spring_no_shuttle(
+        anchor_distance=spring_anchor_distance,
+        flex_ratio=spring_flex_ratio,
+        beam_spacing=spring_beam_spacing,
+        shuttle_length=proof_length,
+        shuttle_height=spring_shuttle_height,
+        flex_width=spring_flex_width,
+        rigid_width=spring_rigid_width,
+        initial_offset=spring_initial_offset,
+        taper_length=spring_taper_length,
+        fillet_radius=spring_fillet_radius,
+        junction_widening=spring_junction_widening,
+        anchor_pad_length=spring_anchor_pad_length,
+        anchor_pad_height=spring_anchor_pad_height,
+        n_points=spring_n_points,
+        layer=layer,
+    )
+
+    # Upper spring -- same orientation as lower (no mirror).
+    # Place so upper beam (at y=+beam_spacing/2) aligns with proof mass top edge.
+    spring_upper = switch.add_ref(spring)
+    spring_upper.dmovey(extended_height / 2 - spring_beam_spacing / 2 - 2)
+
+    # Lower spring -- same orientation, lower beam near proof mass bottom edge.
+    spring_lower = switch.add_ref(spring)
+    spring_lower.dmovey(-(extended_height / 2 - spring_beam_spacing / 2 - 2))
+
+    # Comb drives -- keep at same position relative to proof mass center
+    # by adding the extension offset to comb_edge_lower.
+    adjusted_comb_edge_lower = comb_edge_lower + proof_height_extension
+    comb = make_comb_drive(
+        finger_length, finger_width, finger_gap, finger_distance, num_pair,
+        edge_fixed, holder_distance, holder_linewidth, holder_width_move,
+        holder_width_fixed, holder_gap_min, holder_top_over, holder_bottom_over, layer,
+    )
+    comb_right = switch.add_ref(comb)
+    comb_right.dmovex(proof_length / 2)
+    comb_right.dmovey(-extended_height / 2 + adjusted_comb_edge_lower)
+
+    comb_left = switch.add_ref(comb)
+    comb_left.dmirror_x()
+    comb_left.dmovex(-proof_length / 2)
+    comb_left.dmovey(-extended_height / 2 + adjusted_comb_edge_lower)
 
     return switch
 
