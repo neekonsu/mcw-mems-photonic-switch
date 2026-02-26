@@ -596,10 +596,15 @@ def make_verified_spring_no_shuttle(
         coords[:, 1] += y_shift
         c.add_polygon(coords, layer=layer)
 
-    # Anchor pads on POLY_ANCHOR + SI_FULL
+    # Anchor pads: multi-layer stack for proper anchoring.
     # At the anchor ends (x=0 / x=anchor_distance), beams are at
     # y = ±beam_spacing/2 - initial_offset (after centering).
     # Pads span that range plus anchor_pad_height margin.
+    #
+    # Layer stack (bottom → top):
+    #   SI_FULL   (1,0) — SOI foundation
+    #   POLY_ANCHOR (6,0) — 200nm undoped poly filling anchor holes, bonds to SOI
+    #   POLY_TOP  (8,0) — 500nm structural poly cap (marks region as anchored/static)
     half_sp = beam_spacing / 2.0
     pad_y_lo = -half_sp - initial_offset - anchor_pad_height / 2.0
     pad_y_hi = half_sp - initial_offset + anchor_pad_height / 2.0
@@ -607,7 +612,7 @@ def make_verified_spring_no_shuttle(
     left_x = -anchor_distance / 2.0
     right_x = anchor_distance / 2.0
 
-    for anchor_layer in [LAYER.POLY_ANCHOR, LAYER.SI_FULL]:
+    for anchor_layer in [LAYER.SI_FULL, LAYER.POLY_ANCHOR, LAYER.POLY_TOP]:
         c.add_polygon([
             (left_x - anchor_pad_length, pad_y_lo),
             (left_x, pad_y_lo),
